@@ -6,10 +6,6 @@ import CoreData
 import XCTest
 
 class CoreDataTest: XCTestCase {
-    private lazy var model = NSManagedObjectModel.mergedModel(
-      from: [Bundle(for: CoreDataTest.self)]
-    )!
-
     private var container: NSPersistentContainer!
     
     override func setUpWithError() throws {
@@ -37,7 +33,7 @@ private extension CoreDataTest {
         let description = NSPersistentStoreDescription()
         description.type = NSInMemoryStoreType
         
-        let container = NSPersistentContainer(name: "Model", managedObjectModel: model)
+        let container = NSPersistentContainer(name: "Model", managedObjectModel: buildCoreDataModel())
         container.persistentStoreDescriptions = [description]
         
         var loadingError: Error?
@@ -50,5 +46,35 @@ private extension CoreDataTest {
         }
         
         return container
+    }
+}
+
+// MARK: - Test Setup Helpers
+
+internal extension CoreDataTest {
+    var viewContext: NSManagedObjectContext {
+        container.viewContext
+    }
+    
+    func studentFetchRequest() -> NSFetchRequest<Student> {
+        NSFetchRequest(entityName: "Student")
+    }
+    
+    func teacherFetchRequest() -> NSFetchRequest<Teacher> {
+        NSFetchRequest(entityName: "Teacher")
+    }
+
+    func insertStudents(_ students: (id: Int, firstName: String, lastName: String)...) throws -> [Student] {
+        let ctx = container.viewContext
+        let result = students.map { one in
+            let storedStudent = NSEntityDescription.insertNewObject(forEntityName: "Student", into: ctx) as! Student
+            storedStudent.firstName = one.firstName
+            storedStudent.lastName = one.lastName
+            storedStudent.id = one.id
+            return storedStudent
+        }
+        
+        try ctx.save()
+        return result
     }
 }
