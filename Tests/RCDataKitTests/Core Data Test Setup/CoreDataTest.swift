@@ -63,18 +63,4 @@ internal extension CoreDataTest {
     func teacherFetchRequest() -> NSFetchRequest<Teacher> {
         NSFetchRequest(entityName: "Teacher")
     }
-
-    func insertStudents(_ students: (id: Int, firstName: String, lastName: String)...) throws -> [Student] {
-        let ctx = container.viewContext
-        let result = students.map { one in
-            let storedStudent = NSEntityDescription.insertNewObject(forEntityName: "Student", into: ctx) as! Student
-            storedStudent.firstName = one.firstName
-            storedStudent.lastName = one.lastName
-            storedStudent.id = one.id
-            return storedStudent
-        }
-        
-        try ctx.save()
-        return result
-    }
 }

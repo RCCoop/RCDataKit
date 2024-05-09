@@ -4,13 +4,25 @@
 
 import CoreData
 import Foundation
+import RCDataKit
 
 /// Abstract Entity to encompass Student and Teacher
 @objc(Person)
-class Person: NSManagedObject {
+class Person: NSManagedObject, Updatable {
     @NSManaged var firstName: String
     @NSManaged var lastName: String
     @NSManaged var id: Int
+    
+    var fullName: String {
+        firstName + " " + lastName
+    }
+    
+    convenience init(context: NSManagedObjectContext, id: Int, firstName: String, lastName: String) {
+        self.init(context: context)
+        self.id = id
+        self.firstName = firstName
+        self.lastName = lastName
+    }
 }
 
 @objc(Student)
@@ -24,12 +36,19 @@ class Teacher: Person {
 }
 
 @objc(Course)
-class Course: NSManagedObject {
+class Course: NSManagedObject, Updatable {
     @NSManaged var title: String
     @NSManaged var id: String
     @NSManaged var isFull: Bool
     @NSManaged var teacher: Teacher
     @NSManaged var students: Set<Student>
+    
+    convenience init(context: NSManagedObjectContext, id: String, title: String) {
+        self.init(context: context)
+        self.id = id
+        self.title = title
+        isFull = false
+    }
 }
 
 // MARK: - The Model
