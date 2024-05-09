@@ -17,13 +17,6 @@ class CoreDataTest: XCTestCase {
         try super.tearDownWithError()
         
         // TODO: remove all data of all types from container
-        /*
-         container.viewContext.deleteAll(Note.self)
-         container.viewContext.deleteAll(User.self)
-         container.viewContext.deleteAll(UserAccount.self)
-         container.viewContext.deleteAll(Profile.self)
-         container.viewContext.deleteAll(BillingInfo.self)
-         */
         container = nil
     }
 }

@@ -122,13 +122,14 @@ public extension Updatable {
 // MARK: - To-Many Relation Updaters
 
 public extension Updatable {
-    /// <#Description#>
+    /// Adds an item to a to-many relation if that item isn't already present in the relation. Otherwise, the
+    /// caller is left unchanged.
     ///
     /// - Parameters:
-    ///   - keyPath: <#keyPath description#>
-    ///   - relation: <#relation description#>
+    ///   - keyPath: The KeyPath representing the relationship property.
+    ///   - relation: The item to add into the relationship.
     ///
-    /// - Returns: <#description#>
+    /// - Returns: `true` if the new item was inserted into the relation.
     @discardableResult
     func add<R>(
         _ keyPath: WritableKeyPath<Self, Set<R>>,
@@ -142,13 +143,14 @@ public extension Updatable {
         return true
     }
     
-    /// <#Description#>
+    /// Adds an item to a to-many relation if that item isn't `nil`, and isn't already present in the relation.
+    /// Otherwise, the caller is left unchanged.
     ///
     /// - Parameters:
-    ///   - keyPath: <#keyPath description#>
-    ///   - relation: <#relation description#>
+    ///   - keyPath: The KeyPath representing the relationship property.
+    ///   - relation: The item to add into the relationship.
     ///
-    /// - Returns: <#description#>
+    /// - Returns: `true` if the new item was inserted into the relation.
     @discardableResult
     func add<R>(
         _ keyPath: WritableKeyPath<Self, Set<R>>,
@@ -157,13 +159,15 @@ public extension Updatable {
         relation.map { add(keyPath, relation: $0) } ?? false
     }
     
-    /// <#Description#>
+    /// Adds all items in a collection into a to-many relation, as long as any of the collected items aren't already
+    /// present in the relation. If all of the collection items are already present in the relation, the caller is
+    /// left unchanged.
     ///
     /// - Parameters:
-    ///   - keyPath: <#keyPath description#>
-    ///   - relation: <#relations description#>
+    ///   - keyPath: The KeyPath representing the relationship property.
+    ///   - relation: The items to add into the relationship.
     ///
-    /// - Returns: <#description#>
+    /// - Returns: `true` if any new items were inserted into the relation.
     @discardableResult
     func add<R, C>(
         _ keyPath: WritableKeyPath<Self, Set<R>>,
@@ -180,13 +184,14 @@ public extension Updatable {
         return true
     }
 
-    /// <#Description#>
+    /// Removes an item from a to-many relation as long as the item is present in the relation to begin with.
+    /// Otherwise, the caller is left unchanged.
     ///
     /// - Parameters:
-    ///   - keyPath: <#keyPath description#>
-    ///   - relation: <#relation description#>
+    ///   - keyPath: The KeyPath representing the relationship property.
+    ///   - relation: The item to remove from the relationship.
     ///
-    /// - Returns: <#description#>
+    /// - Returns: `true` if the item was present in the relation and was removed successfully.
     @discardableResult
     func remove<R>(
         _ keyPath: WritableKeyPath<Self, Set<R>>,
@@ -200,13 +205,14 @@ public extension Updatable {
         return true
     }
     
-    /// <#Description#>
+    /// Removes an item from a to-many relation as long as the item is not `nil`, and is present in the
+    /// relation to begin with. Otherwise, the caller is left unchanged.
     ///
     /// - Parameters:
-    ///   - keyPath: <#keyPath description#>
-    ///   - relation: <#relation description#>
+    ///   - keyPath: The KeyPath representing the relationship property.
+    ///   - relation: The item to remove from the relationship.
     ///
-    /// - Returns: <#description#>
+    /// - Returns: `true` if the item was present in the relation and was removed successfully.
     @discardableResult
     func remove<R>(
         _ keyPath: WritableKeyPath<Self, Set<R>>,

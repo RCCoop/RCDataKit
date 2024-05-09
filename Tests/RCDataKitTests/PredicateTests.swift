@@ -6,44 +6,11 @@ import CoreData
 import XCTest
 @testable import RCDataKit
 
-final class PredicateTests: CoreDataTest {
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        
-        _ = Student(context: viewContext, id: 0, firstName: "Bart", lastName: "Simpson")
-        _ = Student(context: viewContext, id: 1, firstName: "Lisa", lastName: "Simpson")
-        _ = Student(context: viewContext, id: 2, firstName: "Maggie", lastName: "Simpson")
-        _ = Student(context: viewContext, id: 3, firstName: "Eric", lastName: "Cartman")
-        _ = Student(context: viewContext, id: 4, firstName: "Stan", lastName: "Marsh")
-        _ = Student(context: viewContext, id: 5, firstName: "Kyle", lastName: "Broflovski")
-        _ = Student(context: viewContext, id: 6, firstName: "Kenny", lastName: "McCormick")
-        _ = Student(context: viewContext, id: 7, firstName: "Tina", lastName: "Belcher")
-        _ = Student(context: viewContext, id: 8, firstName: "Gene", lastName: "Belcher")
-        _ = Student(context: viewContext, id: 9, firstName: "Louise", lastName: "Belcher")
-
-        try viewContext.save()
-    }
-
-    var simpsonsPredicate: NSPredicate {
-        NSPredicate(format: "%K == 'Simpson'", #keyPath(Student.lastName))
-    }
-    
-    var bobsPredicate: NSPredicate {
-        NSPredicate(format: "%K == 'Belcher'", #keyPath(Student.lastName))
-    }
-    
-    var southParkPredicate: NSPredicate {
-        NSPredicate(format: "%K BETWEEN %@", #keyPath(Student.id), [3, 6])
-    }
-    
-    var sorting: [NSSortDescriptor] {
-        [NSSortDescriptor(key: "id", ascending: true)]
-    }
+final class PredicateTests: KidsTests {
     
     func testBasicSetupPredicates() throws {
         let simpsonsRequest = studentFetchRequest()
-        simpsonsRequest.sortDescriptors = sorting
+        simpsonsRequest.sortDescriptors = sortById
         simpsonsRequest.predicate = simpsonsPredicate
         let simpsons = try viewContext.fetch(simpsonsRequest)
         
@@ -51,7 +18,7 @@ final class PredicateTests: CoreDataTest {
         XCTAssertEqual(simpsons.map(\.firstName), ["Bart", "Lisa", "Maggie"])
         
         let bobsRequest = studentFetchRequest()
-        bobsRequest.sortDescriptors = sorting
+        bobsRequest.sortDescriptors = sortById
         bobsRequest.predicate = bobsPredicate
         let bobsKids = try viewContext.fetch(bobsRequest)
         
@@ -59,7 +26,7 @@ final class PredicateTests: CoreDataTest {
         XCTAssertEqual(bobsKids.map(\.firstName), ["Tina", "Gene", "Louise"])
         
         let soParkRequest = studentFetchRequest()
-        soParkRequest.sortDescriptors = sorting
+        soParkRequest.sortDescriptors = sortById
         soParkRequest.predicate = southParkPredicate
         let parkKids = try viewContext.fetch(soParkRequest)
         
@@ -69,7 +36,7 @@ final class PredicateTests: CoreDataTest {
     
     func testOrPredicate() throws {
         let request = studentFetchRequest()
-        request.sortDescriptors = sorting
+        request.sortDescriptors = sortById
         request.predicate = simpsonsPredicate || bobsPredicate
         let kids = try viewContext.fetch(request)
         
@@ -89,7 +56,7 @@ final class PredicateTests: CoreDataTest {
     func testAndPredicate() throws {
         let idLessThanFivePredicate = NSPredicate(format: "%K < %i", #keyPath(Student.id), 5)
         let request = studentFetchRequest()
-        request.sortDescriptors = sorting
+        request.sortDescriptors = sortById
         request.predicate = southParkPredicate && idLessThanFivePredicate
         let kids = try viewContext.fetch(request)
         
@@ -99,7 +66,7 @@ final class PredicateTests: CoreDataTest {
     
     func testNotPredicate() throws {
         let request = studentFetchRequest()
-        request.sortDescriptors = sorting
+        request.sortDescriptors = sortById
         request.predicate = !bobsPredicate
         let kids = try viewContext.fetch(request)
         
