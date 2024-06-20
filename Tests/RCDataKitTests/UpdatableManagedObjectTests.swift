@@ -1,9 +1,6 @@
 //
 //  UpdatableManagedObjectTests.swift
 //  
-//
-//  Created by Ryan Linn on 5/8/24.
-//
 
 import XCTest
 

@@ -1,9 +1,6 @@
 //
 //  KeyPathTests.swift
 //  
-//
-//  Created by Ryan Linn on 5/8/24.
-//
 
 import XCTest
 @testable import RCDataKit

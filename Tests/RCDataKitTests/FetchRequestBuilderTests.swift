@@ -1,8 +1,5 @@
 //
 //  FetchRequestBuilderTests.swift
-//  
-//
-//  Created by Ryan Linn on 5/9/24.
 //
 
 import CoreData
