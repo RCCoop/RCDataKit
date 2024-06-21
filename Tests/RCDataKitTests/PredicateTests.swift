@@ -83,4 +83,27 @@ final class PredicateTests: KidsTests {
         XCTAssertEqual(kids.count, 7)
         XCTAssertEqual(kids.map(\.firstName), firstNames)
     }
+    
+    func testObjectIDPredicate() throws {
+        let allStudents = try viewContext.fetch(studentFetchRequest())
+        let simpsonIDs = allStudents
+            .filter { $0.lastName == "Simpson" }
+            .map { $0.objectID }
+        let idsRequest = studentFetchRequest()
+            .predicated(NSPredicate(managedObjectIds: simpsonIDs))
+        let simpsonsKids = try viewContext.fetch(idsRequest)
+        
+        XCTAssertEqual(simpsonsKids.count, 3)
+        XCTAssert(simpsonsKids.allSatisfy({ $0.lastName == "Simpson" }))
+    }
+    
+    func testObjectIDPredicateTypeMismatch() throws {
+        let someTeacher = Teacher(context: viewContext, id: 0, firstName: "Mr", lastName: "Rogers")
+        try viewContext.save()
+        
+        let request = studentFetchRequest()
+        request.predicate = NSPredicate(managedObjectIds: [someTeacher.objectID])
+        let result = try viewContext.fetch(request)
+        XCTAssertEqual(result.count, 0)
+    }
 }

@@ -2,6 +2,7 @@
 //  NSPredicate+.swift
 //
 
+import CoreData
 import Foundation
 
 public func || (lhs: NSPredicate, rhs: NSPredicate) -> NSPredicate {
@@ -14,4 +15,11 @@ public func && (lhs: NSPredicate, rhs: NSPredicate) -> NSPredicate {
 
 public prefix func ! (predicate: NSPredicate) -> NSPredicate {
     NSCompoundPredicate(notPredicateWithSubpredicate: predicate)
+}
+
+extension NSPredicate {
+    /// Initializes a predicate matching all objects with the given `NSManagedObjectID`s.
+    convenience init(managedObjectIds: [NSManagedObjectID]) {
+        self.init(format: "self in %@", managedObjectIds)
+    }
 }
