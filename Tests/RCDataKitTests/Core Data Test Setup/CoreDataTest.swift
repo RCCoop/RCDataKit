@@ -26,7 +26,8 @@ private extension CoreDataTest {
         let description = NSPersistentStoreDescription()
         description.type = NSInMemoryStoreType
         
-        let container = NSPersistentContainer(name: "Model", managedObjectModel: buildCoreDataModel())
+        let model = NSManagedObjectModel.mergedModel(from: [.module])!
+        let container = NSPersistentContainer(name: "TestModel", managedObjectModel: model)
         container.persistentStoreDescriptions = [description]
         
         var loadingError: Error?

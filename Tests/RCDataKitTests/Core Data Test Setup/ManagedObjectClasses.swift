@@ -53,6 +53,7 @@ class Course: NSManagedObject, Updatable {
 
 // MARK: - The Model
 
+/// Not currently used. Builds NSManagedObjectModel manually without a mom file.
 func buildCoreDataModel() -> NSManagedObjectModel {
     // Student
     let studentEntity = NSEntityDescription()
