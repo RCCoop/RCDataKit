@@ -26,6 +26,7 @@ let package = Package(
             name: "RCDataKit"),
         .testTarget(
             name: "RCDataKitTests",
-            dependencies: ["RCDataKit"]),
+            dependencies: ["RCDataKit"],
+            resources: [.copy("Core Data Test Setup/SampleData.json")]),
     ]
 )

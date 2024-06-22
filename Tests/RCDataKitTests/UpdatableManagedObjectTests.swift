@@ -64,7 +64,7 @@ final class UpdatableManagedObjectTests: CoreDataTest {
         let teacherA = Teacher(context: viewContext, id: 0, firstName: "Mr", lastName: "Smith")
         let teacherB = Teacher(context: viewContext, id: 1, firstName: "Mrs", lastName: "Jane")
         
-        let course = Course(context: viewContext, id: "HIST101", title: "Intro to History")
+        let course = School(context: viewContext, id: "ABC", name: "High School")
         course.teacher = teacherA
         
         try viewContext.save()
@@ -103,55 +103,55 @@ final class UpdatableManagedObjectTests: CoreDataTest {
         let mrSmith = Teacher(context: viewContext, id: 0, firstName: "Mr", lastName: "Smith")
         let msDoe = Teacher(context: viewContext, id: 1, firstName: "Ms", lastName: "Doe")
         
-        let historyA = Course(context: viewContext, id: "HIST101", title: "Intro to History")
-        let historyB = Course(context: viewContext, id: "HIST201", title: "Second Year History")
-        let historyC = Course(context: viewContext, id: "HIST301", title: "Advanced History")
-        historyA.teacher = mrSmith
-        historyB.teacher = mrSmith
-        historyC.teacher = msDoe
+        let schoolA = School(context: viewContext, id: "ABC", name: "School A")
+        let schoolB = School(context: viewContext, id: "DEF", name: "School B")
+        let schoolC = School(context: viewContext, id: "GHI", name: "School C")
+        schoolA.teacher = mrSmith
+        schoolB.teacher = mrSmith
+        schoolC.teacher = msDoe
         
         // add object to set that's already in the set
-        XCTAssertFalse(mrSmith.add(\.courses, relation: historyA))
+        XCTAssertFalse(mrSmith.add(\.schools, relation: schoolA))
         
         // add object to set that's not already in the set
-        XCTAssertTrue(mrSmith.add(\.courses, relation: historyC))
-        XCTAssertEqual(historyC.teacher, mrSmith)
+        XCTAssertTrue(mrSmith.add(\.schools, relation: schoolC))
+        XCTAssertEqual(schoolC.teacher, mrSmith)
         
         // add nil object to the set
-        XCTAssertFalse(mrSmith.add(\.courses, relation: nil))
+        XCTAssertFalse(mrSmith.add(\.schools, relation: nil))
         
         // add array of objects to the set where all objects already exist in the set
-        XCTAssertFalse(mrSmith.add(\.courses, relation: [historyA, historyB, historyC]))
+        XCTAssertFalse(mrSmith.add(\.schools, relation: [schoolA, schoolB, schoolC]))
         
         // add array of objects to the set where some objects exist in the set
-        mrSmith.courses = [historyA]
-        XCTAssertTrue(mrSmith.add(\.courses, relation: [historyA, historyB]))
-        XCTAssertEqual(mrSmith.courses, Set([historyA, historyB]))
+        mrSmith.schools = [schoolA]
+        XCTAssertTrue(mrSmith.add(\.schools, relation: [schoolA, schoolB]))
+        XCTAssertEqual(mrSmith.schools, Set([schoolA, schoolB]))
         
         // add array of objects to the set where no objects already exist in the set
-        mrSmith.courses = []
-        XCTAssertTrue(mrSmith.add(\.courses, relation: [historyA, historyB]))
-        XCTAssertEqual(mrSmith.courses, Set([historyA, historyB]))
+        mrSmith.schools = []
+        XCTAssertTrue(mrSmith.add(\.schools, relation: [schoolA, schoolB]))
+        XCTAssertEqual(mrSmith.schools, Set([schoolA, schoolB]))
     }
         
     func testRemoveToManyRelation() throws {
         let mrSmith = Teacher(context: viewContext, id: 0, firstName: "Mr", lastName: "Smith")
         
-        let historyA = Course(context: viewContext, id: "HIST101", title: "Intro to History")
-        let historyB = Course(context: viewContext, id: "HIST201", title: "Second Year History")
-        historyA.teacher = mrSmith
-        historyB.teacher = mrSmith
+        let schoolA = School(context: viewContext, id: "ABC", name: "School A")
+        let schoolB = School(context: viewContext, id: "DEF", name: "School B")
+        schoolA.teacher = mrSmith
+        schoolB.teacher = mrSmith
 
-        XCTAssertEqual(mrSmith.courses, Set([historyA, historyB]))
+        XCTAssertEqual(mrSmith.schools, Set([schoolA, schoolB]))
         
         // remove object from a set that exists in the set
-        XCTAssertTrue(mrSmith.remove(\.courses, relation: historyA))
-        XCTAssertEqual(mrSmith.courses, Set([historyB]))
+        XCTAssertTrue(mrSmith.remove(\.schools, relation: schoolA))
+        XCTAssertEqual(mrSmith.schools, Set([schoolB]))
         
         // remove object from set that doesn't exist in the set
-        XCTAssertFalse(mrSmith.remove(\.courses, relation: historyA))
+        XCTAssertFalse(mrSmith.remove(\.schools, relation: schoolA))
         
         // remove nil object from the set
-        XCTAssertFalse(mrSmith.remove(\.courses, relation: nil))
+        XCTAssertFalse(mrSmith.remove(\.schools, relation: nil))
     }
 }

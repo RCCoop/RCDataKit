@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22758" systemVersion="23F79" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
-    <entity name="Course" representedClassName="Course" syncable="YES">
-        <attribute name="id" optional="YES" attributeType="String"/>
-        <attribute name="isFull" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
-        <attribute name="title" optional="YES" attributeType="String"/>
-        <relationship name="students" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Student" inverseName="courses" inverseEntity="Student"/>
-        <relationship name="teacher" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Teacher" inverseName="courses" inverseEntity="Teacher"/>
-    </entity>
     <entity name="Person" representedClassName="Person" isAbstract="YES" syncable="YES">
         <attribute name="firstName" optional="YES" attributeType="String"/>
         <attribute name="id" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="lastName" optional="YES" attributeType="String"/>
     </entity>
+    <entity name="School" representedClassName="School" syncable="YES">
+        <attribute name="id" optional="YES" attributeType="String"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <relationship name="students" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Student" inverseName="school" inverseEntity="Student"/>
+        <relationship name="teacher" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Teacher" inverseName="schools" inverseEntity="Teacher"/>
+    </entity>
     <entity name="Student" representedClassName="Student" parentEntity="Person" syncable="YES">
-        <relationship name="courses" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Course" inverseName="students" inverseEntity="Course"/>
+        <relationship name="school" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="School" inverseName="students" inverseEntity="School"/>
     </entity>
     <entity name="Teacher" representedClassName="Teacher" parentEntity="Person" syncable="YES">
-        <relationship name="courses" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Course" inverseName="teacher" inverseEntity="Course"/>
+        <relationship name="schools" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="School" inverseName="teacher" inverseEntity="School"/>
     </entity>
 </model>

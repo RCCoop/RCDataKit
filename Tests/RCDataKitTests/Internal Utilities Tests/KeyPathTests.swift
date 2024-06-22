@@ -8,7 +8,7 @@ import XCTest
 final class KeyPathTests: XCTestCase {
     func testKeyPathStrings() {
         XCTAssertEqual((\Person.firstName).stringRepresentation, "firstName")
-        XCTAssertEqual((\Course.title).stringRepresentation, "title")
+        XCTAssertEqual((\School.name).stringRepresentation, "name")
     }
     
     func testFailingKeyPaths() {

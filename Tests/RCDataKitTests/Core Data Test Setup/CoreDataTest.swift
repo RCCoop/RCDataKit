@@ -7,6 +7,7 @@ import XCTest
 
 class CoreDataTest: XCTestCase {
     private var container: NSPersistentContainer!
+    static let model = NSManagedObjectModel.mergedModel(from: [.module])!
     
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -26,8 +27,7 @@ private extension CoreDataTest {
         let description = NSPersistentStoreDescription()
         description.type = NSInMemoryStoreType
         
-        let model = NSManagedObjectModel.mergedModel(from: [.module])!
-        let container = NSPersistentContainer(name: "TestModel", managedObjectModel: model)
+        let container = NSPersistentContainer(name: "TestModel", managedObjectModel: Self.model)
         container.persistentStoreDescriptions = [description]
         
         var loadingError: Error?

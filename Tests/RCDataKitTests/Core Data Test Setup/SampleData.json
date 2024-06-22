@@ -1,0 +1,98 @@
+{
+        "students" : [
+            {
+                "firstName" : "Bart",
+                "lastName" : "Simpson",
+                "id" : 0,
+                "school": "SPR"
+            },
+            {
+                "firstName" : "Lisa",
+                "lastName" : "Simpson",
+                "id" : 1,
+                "school": "SPR"
+            },
+            {
+                "firstName" : "Maggie",
+                "lastName" : "Simpson",
+                "id" : 2,
+                "school": "SPR"
+            },
+            {
+                "firstName" : "Eric",
+                "lastName" : "Cartman",
+                "id" : 3,
+                "school": "SOU"
+            },
+            {
+                "firstName" : "Stan",
+                "lastName" : "Marsh",
+                "id" : 4,
+                "school": "SOU"
+            },
+            {
+                "firstName" : "Kyle",
+                "lastName" : "Broflovski",
+                "id" : 5,
+                "school": "SOU"
+            },
+            {
+                "firstName" : "Kenny",
+                "lastName" : "McCormick",
+                "id" : 6,
+                "school": "SOU"
+            },
+            {
+                "firstName" : "Tina",
+                "lastName" : "Belcher",
+                "id" : 7,
+                "school": "WAG"
+            },
+            {
+                "firstName" : "Gene",
+                "lastName" : "Belcher",
+                "id" : 8,
+                "school": "WAG"
+            },
+            {
+                "firstName" : "Louise",
+                "lastName" : "Belcher",
+                "id" : 9,
+                "school": "WAG"
+            }
+        ],
+        "teachers" : [
+            {
+                "firstName" : "Edna",
+                "lastName" : "Krabappel",
+                "id" : 0
+            },
+            {
+                "firstName" : "Herbert",
+                "lastName" : "Garrison",
+                "id" : 1
+            },
+            {
+                "firstName" : "Ms",
+                "lastName" : "LaBonz",
+                "id" : 2
+            }
+        ],
+        "schools" : [
+            {
+                "name" : "Wagstaff School",
+                "id" : "WAG",
+                "teacher": 2
+            },
+            {
+                "name" : "Springfield Elementary",
+                "id" : "SPR",
+                "teacher": 0
+            },
+            {
+                "name" : "South Park Elementary",
+                "id" : "SOU",
+                "teacher": 1
+            }
+        ]
+}

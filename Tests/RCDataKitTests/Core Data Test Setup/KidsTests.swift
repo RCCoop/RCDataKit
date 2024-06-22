@@ -9,16 +9,14 @@ class KidsTests: CoreDataTest {
     override func setUpWithError() throws {
         try super.setUpWithError()
         
-        _ = Student(context: viewContext, id: 0, firstName: "Bart", lastName: "Simpson")
-        _ = Student(context: viewContext, id: 1, firstName: "Lisa", lastName: "Simpson")
-        _ = Student(context: viewContext, id: 2, firstName: "Maggie", lastName: "Simpson")
-        _ = Student(context: viewContext, id: 3, firstName: "Eric", lastName: "Cartman")
-        _ = Student(context: viewContext, id: 4, firstName: "Stan", lastName: "Marsh")
-        _ = Student(context: viewContext, id: 5, firstName: "Kyle", lastName: "Broflovski")
-        _ = Student(context: viewContext, id: 6, firstName: "Kenny", lastName: "McCormick")
-        _ = Student(context: viewContext, id: 7, firstName: "Tina", lastName: "Belcher")
-        _ = Student(context: viewContext, id: 8, firstName: "Gene", lastName: "Belcher")
-        _ = Student(context: viewContext, id: 9, firstName: "Louise", lastName: "Belcher")
+        let sampleData = try SampleData.build()
+        for student in sampleData.students {
+            _ = Student(
+                context: viewContext,
+                id: student.id,
+                firstName: student.firstName,
+                lastName: student.lastName)
+        }
 
         try viewContext.save()
     }

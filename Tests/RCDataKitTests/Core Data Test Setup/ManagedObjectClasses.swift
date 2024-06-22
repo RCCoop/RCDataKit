@@ -27,27 +27,25 @@ class Person: NSManagedObject, Updatable {
 
 @objc(Student)
 class Student: Person {
-    @NSManaged var courses: Set<Course>
+    @NSManaged var school: School
 }
 
 @objc(Teacher)
 class Teacher: Person {
-    @NSManaged var courses: Set<Course>
+    @NSManaged var schools: Set<School>
 }
 
-@objc(Course)
-class Course: NSManagedObject, Updatable {
-    @NSManaged var title: String
+@objc(School)
+class School: NSManagedObject, Updatable {
+    @NSManaged var name: String
     @NSManaged var id: String
-    @NSManaged var isFull: Bool
     @NSManaged var teacher: Teacher
     @NSManaged var students: Set<Student>
     
-    convenience init(context: NSManagedObjectContext, id: String, title: String) {
+    convenience init(context: NSManagedObjectContext, id: String, name: String) {
         self.init(context: context)
         self.id = id
-        self.title = title
-        isFull = false
+        self.name = name
     }
 }
 
@@ -86,54 +84,48 @@ func buildCoreDataModel() -> NSManagedObjectModel {
     personEntity.subentities = [studentEntity, teacherEntity]
     
     // Course
-    let courseEntity = NSEntityDescription()
-    courseEntity.name = "Course"
-    courseEntity.managedObjectClassName = "Course"
-    let courseIdAttribute = NSAttributeDescription()
-    courseIdAttribute.name = "id"
-    courseIdAttribute.attributeType = .stringAttributeType
-    courseEntity.properties.append(courseIdAttribute)
+    let schoolEntity = NSEntityDescription()
+    schoolEntity.name = "School"
+    schoolEntity.managedObjectClassName = "School"
+    let schoolIdAttribute = NSAttributeDescription()
+    schoolIdAttribute.name = "id"
+    schoolIdAttribute.attributeType = .stringAttributeType
+    schoolEntity.properties.append(schoolIdAttribute)
     let titleAttribute = NSAttributeDescription()
-    titleAttribute.name = "title"
+    titleAttribute.name = "name"
     titleAttribute.attributeType = .stringAttributeType
-    courseEntity.properties.append(titleAttribute)
-    let isFullAttribute = NSAttributeDescription()
-    isFullAttribute.name = "isFull"
-    isFullAttribute.attributeType = .booleanAttributeType
-    isFullAttribute.isOptional = false
-    isFullAttribute.defaultValue = false
-    courseEntity.properties.append(isFullAttribute)
+    schoolEntity.properties.append(titleAttribute)
     
     // Relationships
-    let studentClassesAttribute = NSRelationshipDescription()
-    studentClassesAttribute.name = "courses"
-    studentClassesAttribute.destinationEntity = courseEntity
-    studentEntity.properties.append(studentClassesAttribute)
+    let studentSchoolAttribute = NSRelationshipDescription()
+    studentSchoolAttribute.name = "school"
+    studentSchoolAttribute.destinationEntity = schoolEntity
+    studentEntity.properties.append(studentSchoolAttribute)
     
-    let teacherClassAttribute = NSRelationshipDescription()
-    teacherClassAttribute.name = "courses"
-    teacherClassAttribute.destinationEntity = courseEntity
-    teacherEntity.properties.append(teacherClassAttribute)
+    let teacherSchoolAttribute = NSRelationshipDescription()
+    teacherSchoolAttribute.name = "school"
+    teacherSchoolAttribute.destinationEntity = schoolEntity
+    teacherEntity.properties.append(teacherSchoolAttribute)
     
-    let courseStudentsAttribute = NSRelationshipDescription()
-    courseStudentsAttribute.name = "students"
-    courseStudentsAttribute.destinationEntity = studentEntity
-    courseEntity.properties.append(courseStudentsAttribute)
+    let schoolStudentsAttribute = NSRelationshipDescription()
+    schoolStudentsAttribute.name = "students"
+    schoolStudentsAttribute.destinationEntity = studentEntity
+    schoolEntity.properties.append(schoolStudentsAttribute)
     
-    let courseTeacherAttribute = NSRelationshipDescription()
-    courseTeacherAttribute.name = "teacher"
-    courseTeacherAttribute.destinationEntity = teacherEntity
-    courseTeacherAttribute.maxCount = 1
-    courseEntity.properties.append(courseTeacherAttribute)
+    let schoolTeacherAttribute = NSRelationshipDescription()
+    schoolTeacherAttribute.name = "teacher"
+    schoolTeacherAttribute.maxCount = 1
+    schoolTeacherAttribute.destinationEntity = teacherEntity
+    schoolEntity.properties.append(schoolTeacherAttribute)
     
-    studentClassesAttribute.inverseRelationship = courseStudentsAttribute
-    courseStudentsAttribute.inverseRelationship = studentClassesAttribute
-    teacherClassAttribute.inverseRelationship = courseTeacherAttribute
-    courseTeacherAttribute.inverseRelationship = teacherClassAttribute
+    studentSchoolAttribute.inverseRelationship = schoolStudentsAttribute
+    schoolStudentsAttribute.inverseRelationship = studentSchoolAttribute
+    teacherSchoolAttribute.inverseRelationship = schoolTeacherAttribute
+    schoolTeacherAttribute.inverseRelationship = teacherSchoolAttribute
     
     // Model
     let model = NSManagedObjectModel()
-    model.entities = [personEntity, studentEntity, teacherEntity, courseEntity]
+    model.entities = [personEntity, studentEntity, teacherEntity, schoolEntity]
     
     return model
 }
