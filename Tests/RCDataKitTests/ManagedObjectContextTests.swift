@@ -3,6 +3,7 @@
 //  
 
 import XCTest
+@testable import RCDataKit
 
 final class ManagedObjectContextTests: KidsTests {
     func testSaveIfNeeded() throws {
@@ -24,6 +25,16 @@ final class ManagedObjectContextTests: KidsTests {
         let refetched = try viewContext.existing(Student.self, withID: oneID)
         let student = try XCTUnwrap(refetched)
         XCTAssertEqual(student.fullName, studentName)
+        
+        // Test failure
+        do {
+            let _ = try viewContext.existing(Teacher.self, withID: oneID)
+            XCTFail("Should fail here")
+        } catch let error as RCDataKitErrors {
+            XCTAssertEqual(error, .mismatchedType)
+        } catch {
+            XCTFail("Wrong error type: \(String(describing: type(of: error)))")
+        }
     }
     
     func testTypedObjectsFromIDs() throws {

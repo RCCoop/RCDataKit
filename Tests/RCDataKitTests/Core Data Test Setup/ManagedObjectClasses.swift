@@ -27,7 +27,7 @@ class Person: NSManagedObject, Updatable {
 
 @objc(Student)
 class Student: Person {
-    @NSManaged var school: School
+    @NSManaged var school: School?
 }
 
 @objc(Teacher)
@@ -39,7 +39,7 @@ class Teacher: Person {
 class School: NSManagedObject, Updatable {
     @NSManaged var name: String
     @NSManaged var id: String
-    @NSManaged var teacher: Teacher
+    @NSManaged var teacher: Teacher?
     @NSManaged var students: Set<Student>
     
     convenience init(context: NSManagedObjectContext, id: String, name: String) {

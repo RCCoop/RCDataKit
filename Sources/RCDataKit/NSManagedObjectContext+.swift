@@ -4,6 +4,10 @@
 
 import CoreData
 
+public enum RCDataKitErrors: Error {
+    case mismatchedType
+}
+
 public extension NSManagedObjectContext {
     /// Attempts to save the context only if changes are present in it. Otherwise, skips the save.
     ///
@@ -24,9 +28,14 @@ public extension NSManagedObjectContext {
     ///   - type: The type of object to retrieve.
     ///   - id:   The `NSManagedObjectID` of the object.
     ///
-    /// - Returns: The concrete object, if it exists in the store.
-    func existing<T: NSManagedObject>(_ type: T.Type, withID id: NSManagedObjectID) throws -> T? {
-        try existingObject(with: id) as? T
+    /// - Returns: The concrete object, if it exists in the store. Otherwise, an error is thrown.
+    func existing<T: NSManagedObject>(_ type: T.Type, withID id: NSManagedObjectID) throws -> T {
+        let managedObject = try existingObject(with: id)
+        if let typedObject = managedObject as? T {
+            return typedObject
+        } else {
+            throw RCDataKitErrors.mismatchedType
+        }
     }
     
     /// Retrieves an array of objects of a given `NSManagedObject` subclass from persistent store, skipping
