@@ -5,28 +5,35 @@
 import CoreData
 import Foundation
 
-/// <#Description#>
+/// A type that provides some standard helper tools for managing a CoreData persistent store.
 public protocol CoreDataStack {
     associatedtype Authors: TransactionAuthor
+    
+    /// The `NSPersistentContainer` that the `CoreDataStack` wraps.
     var container: NSPersistentContainer { get }
+    
+    /// The value of `Authors` to be used in the current target's view context.
     var viewContextID: Authors { get }
 }
 
 // MARK: - TransactionAuthor Type
 
+/// A type that is used with a `CoreDataStack` to describe all possible authors to the persistent store
+/// for the current app. One of the authors needs to be the view context for the current target, and other options
+/// could be the view contexts for other targets, and any background context type that you may use.
 public protocol TransactionAuthor: CaseIterable {
-    var contextName: String { get }
+    var name: String { get }
 }
 
 public extension TransactionAuthor {
     var allOtherAuthors: [Self] {
-        Self.allCases.filter { $0.contextName != self.contextName }
+        Self.allCases.filter { $0.name != self.name }
     }
 }
 
 public extension Collection where Element: TransactionAuthor {
-    var contextNames: [String] {
-        map(\.contextName)
+    var authorNames: [String] {
+        map(\.name)
     }
 }
 
@@ -35,11 +42,12 @@ public extension Collection where Element: TransactionAuthor {
 extension CoreDataStack {
     /// Returns the viewContext for the stack's persistent container, configured by the stack.
     ///
-    /// - Warning: You should not change the `name` property of the context, since the name is set
-    ///            by the container in order to handle persistent history tracking.
+    /// - Warning: You should not change the `transactionAuthor` or `name` properties of the context,
+    /// since they are set by the container in order to handle persistent history tracking.
     public var viewContext: NSManagedObjectContext {
         let vc = container.viewContext
-        vc.name = viewContextID.contextName
+        vc.name = "ViewContext"
+        vc.transactionAuthor = viewContextID.name
         
         // Merge Policy?
         // Undo Manager?
@@ -55,61 +63,14 @@ extension CoreDataStack {
     ///            context, since they are set by the container in order to handle persistent history
     ///            tracking.
     public func backgroundContext(author: Authors) -> NSManagedObjectContext {
+        assert(author.name != viewContextID.name, "Background contexts should not have the same name as the viewContext")
+        
         let context = container.newBackgroundContext()
-        context.name = author.contextName
-        context.transactionAuthor = author.contextName
+        context.transactionAuthor = author.name
+        context.name = author.name
         
         // Merge Policy?
         // Undo Manager
         return context
-    }
-}
-
-// MARK: - Logging
-
-public enum CoreDataStackLogLevel: String {
-    case debug, info, error, warning
-}
-
-public protocol CoreDataStackLogger {
-    func log(type: CoreDataStackLogLevel, message: String)
-}
-
-public struct DefaultLogger: CoreDataStackLogger {
-    public func log(type: CoreDataStackLogLevel, message: String) {
-        print("CORE DATA \(type.rawValue.uppercased()): \(message)")
-    }
-    
-    public init() {}
-}
-
-// MARK: - Basic Stack for Testing & Previews
-
-/// A basic `CoreDataStack` with no file-backed store (in-memory only) and only one background context
-/// available.
-public struct PreviewStack: CoreDataStack {
-    
-    public enum Authors: String, TransactionAuthor {
-        case viewContext
-        case backgroundContext
-        
-        public var contextName: String { rawValue }
-    }
-    
-    public var viewContextID: Authors { .viewContext }
-
-    public let container: NSPersistentContainer
-            
-    public init(container: NSPersistentContainer) {
-        self.container = container
-        
-        container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
-        container.persistentStoreDescriptions.first!.type = NSInMemoryStoreType
-        
-        container.loadPersistentStores { _, error in
-            if let error = error as NSError? {
-                fatalError("PersistentStore setup error \(error), \(error.userInfo)")
-            }
-        }
     }
 }
