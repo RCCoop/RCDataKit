@@ -7,7 +7,7 @@ import Foundation
 import RCDataKit
 
 struct SampleData: Decodable {
-    struct Student: Decodable, Identifiable {
+    struct Student: Codable, Identifiable {
         var firstName: String
         var lastName: String
         var id: Int

@@ -55,7 +55,7 @@ class PersistentStoreTest: XCTestCase {
     }
     
     static func makeContainerWithPersistentTracking() throws -> NSPersistentContainer {
-        let container = NSPersistentContainer(name: "Test Model", managedObjectModel: mergedModel)
+        let container = NSPersistentContainer(name: modelName, managedObjectModel: mergedModel)
         let description = container.persistentStoreDescriptions.first!
         description.url = diskLocation
         description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
@@ -71,11 +71,40 @@ class PersistentStoreTest: XCTestCase {
         return container
     }
     
-    @available(macOS 14.0, *)
+    static func makeContainerForOriginalModel() throws -> NSPersistentContainer {
+        let momdURL = Bundle.module.url(forResource: "TestModel", withExtension: "momd")
+        let modelV1URL = momdURL.map { $0.appendingPathComponent("Model.mom") }
+        let modelV1 = modelV1URL.flatMap { NSManagedObjectModel(contentsOf: $0) }
+        
+        guard let modelV1 else {
+            fatalError()
+        }
+        
+        let persistentContainer = NSPersistentContainer(name: modelName, managedObjectModel: modelV1)
+        if let description = persistentContainer.persistentStoreDescriptions.first {
+            description.shouldMigrateStoreAutomatically = false
+            description.shouldInferMappingModelAutomatically = false
+            description.url = diskLocation
+        }
+        
+        var error: Error?
+        persistentContainer.loadPersistentStores { _, err in
+            if let err { error = err }
+        }
+        if let error {
+            throw error
+        }
+        
+        return persistentContainer
+    }
+        
+    @available(macOS 14.0, iOS 17.0, *)
     static func makeContainerWithStagedMigrations(manager: NSStagedMigrationManager) throws -> NSPersistentContainer {
         let container = NSPersistentContainer(name: modelName, managedObjectModel: mergedModel)
         let description = container.persistentStoreDescriptions.first!
         description.url = diskLocation
+//        description.shouldMigrateStoreAutomatically = false
+//        description.shouldInferMappingModelAutomatically = false
         description.setOption(manager, forKey: NSPersistentStoreStagedMigrationManagerOptionKey)
         
         var error: Error?
