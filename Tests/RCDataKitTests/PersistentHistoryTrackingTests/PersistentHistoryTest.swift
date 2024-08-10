@@ -1,8 +1,5 @@
 //
-//  File.swift
-//  
-//
-//  Created by Ryan Linn on 7/10/24.
+//  PersistentHistoryTest.swift
 //
 
 import CoreData
@@ -11,12 +8,14 @@ import XCTest
 
 class PersistentHistoryTest: XCTestCase {
     
+    var timestampManager = DefaultTimestampManager(userDefaults: .standard)
+    
     // MARK: - Setup
     
     enum Authors: String, TransactionAuthor {
         case viewContext1, viewContext2, backgroundContext
         
-        var contextName: String { rawValue }
+        var name: String { rawValue }
     }
     
     var testStoreURL: URL {
@@ -60,14 +59,14 @@ class PersistentHistoryTest: XCTestCase {
     }
     
 //    override func setUp() async throws {
-//        <#code#>
+//    
 //    }
 //    
     
     override func tearDown() async throws {
         try await super.tearDown()
         
-        Authors.allCases.forEach { UserDefaults.standard.setLatestHistoryTransactionDate(author: $0, date: nil) }
+        Authors.allCases.forEach { timestampManager.setLatestHistoryTransactionDate(author: $0, date: nil) }
     }
     
     // MARK: - Tests
@@ -80,13 +79,13 @@ class PersistentHistoryTest: XCTestCase {
         let vc2 = target2Container.viewContext
         
         // set view context names of each container to VC1 and VC2
-        vc1.name = Authors.viewContext1.contextName
-        vc2.name = Authors.viewContext2.contextName
+        vc1.name = Authors.viewContext1.name
+        vc2.name = Authors.viewContext2.name
         
         // Create Fetcher
         let startDate = Date()
         let bgContext = target1Container.newBackgroundContext()
-//        bgContext.name = Authors.backgroundContext.contextName
+//        bgContext.name = Authors.backgroundContext.name
         let fetcher = PersistentHistoryTracker.DefaultFetcher(
             currentAuthor: Authors.viewContext1,
             logger: DefaultLogger())
@@ -130,13 +129,12 @@ class PersistentHistoryTest: XCTestCase {
         let vc2 = target2Container.viewContext
         
         // set view context names of each container to VC1 and VC2
-        vc1.name = Authors.viewContext1.contextName
-        vc2.name = Authors.viewContext2.contextName
+        vc1.name = Authors.viewContext1.name
+        vc2.name = Authors.viewContext2.name
         
         // Prepare to create Fetcher and Cleaner
-        let startDate = Date()
         let bgContext = target1Container.newBackgroundContext()
-//        bgContext.name = Authors.backgroundContext.contextName
+//        bgContext.name = Authors.backgroundContext.name
                 
         // Perform Actions
         
@@ -165,7 +163,7 @@ class PersistentHistoryTest: XCTestCase {
         // Check number of transactions before cleaning == 2
         let transactions = try fetcher.fetchTransactions(workerContext: bgContext, minimumDate: .distantPast)
         XCTAssertEqual(transactions.count, 2)
-        XCTAssertEqual(Set([Authors.viewContext2.contextName]), Set(transactions.map(\.contextName)))
+        XCTAssertEqual(Set([Authors.viewContext2.name]), Set(transactions.map(\.contextName)))
         
         // Perform cleaning
         try cleaner.cleanTransactions(workerContext: bgContext, cleanBeforeDate: Date())
@@ -187,8 +185,8 @@ class PersistentHistoryTest: XCTestCase {
         let vc2 = target2Container.viewContext
         
         // set view context names of each container to VC1 and VC2
-        vc1.name = Authors.viewContext1.contextName
-        vc2.name = Authors.viewContext2.contextName
+        vc1.name = Authors.viewContext1.name
+        vc2.name = Authors.viewContext2.name
 
         // ViewContext1.retainsRegisteredObjects = true
         vc1.retainsRegisteredObjects = true
@@ -227,7 +225,7 @@ class PersistentHistoryTest: XCTestCase {
         
         // check userDefaults for latest time stamp for VC1 √
         let savedTimeStamps = Authors.allCases.reduce(into: [:]) {
-            $0[$1] = UserDefaults.standard.latestHistoryTransactionDate(author: $1)
+            $0[$1] = timestampManager.latestHistoryTransactionDate(author: $1)
         }
         XCTAssertEqual(Array(savedTimeStamps.keys), [.viewContext1])
         
@@ -254,8 +252,8 @@ class PersistentHistoryTest: XCTestCase {
         let vc2 = target2Container.viewContext
         
         // set view context names of each container to VC1 and VC2
-        vc1.name = Authors.viewContext1.contextName
-        vc2.name = Authors.viewContext2.contextName
+        vc1.name = Authors.viewContext1.name
+        vc2.name = Authors.viewContext2.name
 
         // ViewContexts.retainsRegisteredObjects = true
         vc1.retainsRegisteredObjects = true
@@ -269,7 +267,7 @@ class PersistentHistoryTest: XCTestCase {
         
         // Insert objects into background context
         let bgContext = target2Container.newBackgroundContext()
-        bgContext.name = Authors.backgroundContext.contextName
+        bgContext.name = Authors.backgroundContext.name
         
         let objID1 = try bgContext.performAndWait {
             let student = Student(context: bgContext, id: 0, firstName: "A", lastName: "A")
@@ -306,9 +304,9 @@ class PersistentHistoryTest: XCTestCase {
         
         // check userDefaults for latest time stamp for VC1 √
         let savedTimeStamps = Authors.allCases.reduce(into: [:]) {
-            $0[$1] = UserDefaults.standard.latestHistoryTransactionDate(author: $1)
+            $0[$1] = timestampManager.latestHistoryTransactionDate(author: $1)
         }
-        XCTAssertEqual(Array(savedTimeStamps.keys), [.viewContext1, .viewContext2])
+        XCTAssertEqual(Set(savedTimeStamps.keys), [.viewContext1, .viewContext2])
         
         // stop monitoring
         await tracker1.stopMonitoring()

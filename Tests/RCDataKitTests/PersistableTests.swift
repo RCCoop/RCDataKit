@@ -1,9 +1,6 @@
 //
 //  PersistableTests.swift
 //  
-//
-//  Created by Ryan Linn on 7/5/24.
-//
 
 import CoreData
 @testable import RCDataKit

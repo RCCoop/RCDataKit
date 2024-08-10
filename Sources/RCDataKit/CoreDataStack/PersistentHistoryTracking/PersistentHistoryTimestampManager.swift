@@ -1,15 +1,19 @@
 //
-//  File.swift
-//  
+//  PersistentHistoryTimestampManager.swift
+//
 
 import Foundation
 import os
 
+/// A type that is used to store time stamps of when each app target has merged `NSPersistentHistoryTransaction`s
+/// from the persistent store.
 public protocol PersistentHistoryTimestampManager: Sendable {
-    ///
+    /// Fetches the latest date at which the given `TransactionAuthor` has merged
+    /// `NSPersistentHistoryTransaction`s into the persistent store.
     func latestHistoryTransactionDate<A: TransactionAuthor>(author: A) -> Date?
     
-    ///
+    /// Sets the latest date at which the given `TransactionAuthor` has merged
+    /// `NSPersistentHistoryTransaction`s into the persistent store.
     func setLatestHistoryTransactionDate<A: TransactionAuthor>(author: A, date: Date?)
 }
 
@@ -24,9 +28,7 @@ extension PersistentHistoryTimestampManager {
     }
 }
 
-@available(macOS 13.0, *)
 struct DefaultTimestampManager: PersistentHistoryTimestampManager {
-//    var userDefaults: UserDefaults
     var defaults: OSAllocatedUnfairLock<UserDefaults>
     
     init(userDefaults: UserDefaults) {
@@ -34,7 +36,7 @@ struct DefaultTimestampManager: PersistentHistoryTimestampManager {
     }
     
     func transactionKey<A: TransactionAuthor>(author: A) -> String {
-        "PersistentHistoryTransactionDate-" + author.contextName
+        "PersistentHistoryTransactionDate-" + author.name
     }
     
     func latestHistoryTransactionDate<A>(author: A) -> Date? where A : TransactionAuthor {
@@ -49,28 +51,5 @@ struct DefaultTimestampManager: PersistentHistoryTimestampManager {
         defaults.withLock { def in
             def.set(date, forKey: key)
         }
-    }
-}
-
-extension UserDefaults {
-    func transactionKey<A: TransactionAuthor>(author: A) -> String {
-        "PersistentHistoryTransactionDate-" + author.contextName
-    }
-    
-    /// The timestamp for the most recent history transaction that was merged into the given context
-    func latestHistoryTransactionDate<A: TransactionAuthor>(author: A) -> Date? {
-        object(forKey: transactionKey(author: author)) as? Date
-    }
-    
-    func setLatestHistoryTransactionDate<A: TransactionAuthor>(author: A, date: Date?) {
-        set(date, forKey: transactionKey(author: author))
-    }
-    
-    func latestCommonHistoryTransactionDate<C: Collection>(authors: C) -> Date?
-    where C.Element: TransactionAuthor
-    {
-        authors
-            .compactMap { latestHistoryTransactionDate(author: $0) }
-            .min()
     }
 }
