@@ -28,11 +28,19 @@ class Person: NSManagedObject, Updatable {
 @objc(Student)
 class Student: Person {
     @NSManaged var school: School?
+    
+    static func studentRequest() -> NSFetchRequest<Student> {
+        NSFetchRequest<Student>(entityName: "Student")
+    }
 }
 
 @objc(Teacher)
 class Teacher: Person {
     @NSManaged var schools: Set<School>
+    
+    static func teacherRequest() -> NSFetchRequest<Teacher> {
+        NSFetchRequest<Teacher>(entityName: "Teacher")
+    }
 }
 
 @objc(School)
@@ -41,6 +49,10 @@ class School: NSManagedObject, Updatable {
     @NSManaged var id: String
     @NSManaged var teacher: Teacher?
     @NSManaged var students: Set<Student>
+    
+    static func schoolRequest() -> NSFetchRequest<School> {
+        NSFetchRequest<School>(entityName: "School")
+    }
     
     convenience init(context: NSManagedObjectContext, id: String, name: String) {
         self.init(context: context)
@@ -52,6 +64,7 @@ class School: NSManagedObject, Updatable {
 // MARK: - The Model
 
 /// Not currently used. Builds NSManagedObjectModel manually without a mom file.
+/*
 func buildCoreDataModel() -> NSManagedObjectModel {
     // Student
     let studentEntity = NSEntityDescription()
@@ -129,3 +142,4 @@ func buildCoreDataModel() -> NSManagedObjectModel {
     
     return model
 }
+*/

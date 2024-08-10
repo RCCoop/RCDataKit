@@ -5,7 +5,21 @@
 import XCTest
 @testable import RCDataKit
 
-final class ManagedObjectContextTests: KidsTests {
+final class ManagedObjectContextTests: PersistentStoreTest {
+    
+    var container: NSPersistentContainer!
+    
+    var viewContext: NSManagedObjectContext {
+        container.viewContext
+    }
+    
+    override func setUp() async throws {
+        try await super.setUp()
+        container = try Self.makeContainer()
+        
+        try addStudentsFromSampleData(context: container.viewContext)
+    }
+
     func testSaveIfNeeded() throws {
         let _ = Teacher(context: viewContext, id: 0, firstName: "Mr", lastName: "Rogers")
         
@@ -16,7 +30,7 @@ final class ManagedObjectContextTests: KidsTests {
     }
     
     func testTypedObjectFromID() throws {
-        let allStudents = try viewContext.fetch(studentFetchRequest())
+        let allStudents = try viewContext.fetch(Student.studentRequest())
         let oneID = allStudents[0].objectID
         let studentName = allStudents[0].fullName
         
@@ -38,7 +52,7 @@ final class ManagedObjectContextTests: KidsTests {
     }
     
     func testTypedObjectsFromIDs() throws {
-        let simpsonKidsRequest = studentFetchRequest()
+        let simpsonKidsRequest = Student.studentRequest()
         simpsonKidsRequest.predicate = simpsonsPredicate
         let simpsonKids = try viewContext.fetch(simpsonKidsRequest)
         let ids = simpsonKids.map { $0.objectID }
@@ -53,14 +67,14 @@ final class ManagedObjectContextTests: KidsTests {
     func testDeleteObjects() throws {
         try viewContext.removeInstances(of: Student.self)
         
-        let studentCount = try viewContext.count(for: studentFetchRequest())
+        let studentCount = try viewContext.count(for: Student.studentRequest())
         XCTAssertEqual(studentCount, 0)
     }
     
     func testDeleteSomeObjects() throws {
         try viewContext.removeInstances(of: Student.self, matching: simpsonsPredicate)
         
-        let remainingStudents = try viewContext.fetch(studentFetchRequest())
+        let remainingStudents = try viewContext.fetch(Student.studentRequest())
         XCTAssertTrue(remainingStudents.filter({ $0.lastName == "Simpson" }).isEmpty)
     }
 }

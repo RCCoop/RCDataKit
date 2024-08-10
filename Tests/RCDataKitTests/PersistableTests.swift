@@ -6,7 +6,20 @@ import CoreData
 @testable import RCDataKit
 import XCTest
 
-final class PersistableTests: KidsTests {
+final class PersistableTests: PersistentStoreTest {
+
+    var container: NSPersistentContainer!
+    
+    var viewContext: NSManagedObjectContext {
+        container.viewContext
+    }
+    
+    override func setUp() async throws {
+        try await super.setUp()
+        container = try Self.makeContainer()
+        
+        try addStudentsFromSampleData(context: container.viewContext)
+    }
 
     func testImportOutputTypes() throws {
         let sampleData = try SampleData.build()

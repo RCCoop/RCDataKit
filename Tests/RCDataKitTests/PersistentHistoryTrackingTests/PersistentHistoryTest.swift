@@ -6,7 +6,7 @@ import CoreData
 import XCTest
 @testable import RCDataKit
 
-class PersistentHistoryTest: XCTestCase {
+class PersistentHistoryTest: PersistentStoreTest {
     
     var timestampManager = DefaultTimestampManager(userDefaults: .standard)
     
@@ -17,52 +17,7 @@ class PersistentHistoryTest: XCTestCase {
         
         var name: String { rawValue }
     }
-    
-    var testStoreURL: URL {
-        FileManager.default
-            .urls(for: .cachesDirectory, in: .userDomainMask)
-            .first!
-            .appending(path: "PersistentHistoryTestStore")
-    }
-    
-    static var persistentModel = NSManagedObjectModel.mergedModel(from: [.module])!
-    
-    func makeContainer(url: URL) throws -> NSPersistentContainer {
-        let container = NSPersistentContainer(name: "Test Container", managedObjectModel: Self.persistentModel)
-        let description = container.persistentStoreDescriptions.first!
-        description.url = url
-        description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
-        description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
         
-        var error: Error?
-        container.loadPersistentStores { _, err in
-            if let err { error = err }
-        }
-        if let error {
-            throw error
-        }
-        return container
-    }
-    
-    func destroyContainer(url: URL) {
-        let urls = [
-            url,
-            url.deletingPathExtension().appendingPathExtension("sqlite-wal"),
-            url.deletingPathExtension().appendingPathExtension("sqlite-shm")
-        ]
-        
-        urls.forEach { try? FileManager.default.removeItem(at: $0) }
-    }
-    
-    func sleep(seconds: Double) async {
-        try! await Task.sleep(for: .seconds(seconds))
-    }
-    
-//    override func setUp() async throws {
-//    
-//    }
-//    
-    
     override func tearDown() async throws {
         try await super.tearDown()
         
@@ -73,8 +28,8 @@ class PersistentHistoryTest: XCTestCase {
     
     func testFetcher() async throws {
         // create 2 containers at same location
-        let target1Container = try makeContainer(url: testStoreURL)
-        let target2Container = try makeContainer(url: testStoreURL)
+        let target1Container = try Self.makeContainerWithPersistentTracking()
+        let target2Container = try Self.makeContainerWithPersistentTracking()
         let vc1 = target1Container.viewContext
         let vc2 = target2Container.viewContext
         
@@ -114,17 +69,14 @@ class PersistentHistoryTest: XCTestCase {
         let students = try vc1.fetch(studentsFetch)
         XCTAssertEqual(students.map(\.id), [0, 1])
         XCTAssertEqual(students.count, 2)
-        
-        // Tear down
-        destroyContainer(url: testStoreURL)
     }
     
     func testCleaner() async throws {
         let logger = DefaultLogger()
         
         // create 2 containers at same location
-        let target1Container = try makeContainer(url: testStoreURL)
-        let target2Container = try makeContainer(url: testStoreURL)
+        let target1Container = try Self.makeContainerWithPersistentTracking()
+        let target2Container = try Self.makeContainerWithPersistentTracking()
         let vc1 = target1Container.viewContext
         let vc2 = target2Container.viewContext
         
@@ -163,7 +115,7 @@ class PersistentHistoryTest: XCTestCase {
         // Check number of transactions before cleaning == 2
         let transactions = try fetcher.fetchTransactions(workerContext: bgContext, minimumDate: .distantPast)
         XCTAssertEqual(transactions.count, 2)
-        XCTAssertEqual(Set([Authors.viewContext2.name]), Set(transactions.map(\.author)))
+        XCTAssertEqual(Set([Authors.viewContext2.name]), Set(transactions.map(\.contextName)))
         
         // Perform cleaning
         try cleaner.cleanTransactions(workerContext: bgContext, cleanBeforeDate: Date())
@@ -171,16 +123,13 @@ class PersistentHistoryTest: XCTestCase {
         // Check number of transactions after cleaning == 0
         let cleanedTransactions = try fetcher.fetchTransactions(workerContext: bgContext, minimumDate: .distantPast)
         XCTAssertEqual(cleanedTransactions.count, 0)
-        
-        // Tear down
-        destroyContainer(url: testStoreURL)
     }
     
     func testPersistentHistoryTracker() async throws {
         // Create two containers at same URL
         // create 2 containers at same location
-        let target1Container = try makeContainer(url: testStoreURL)
-        let target2Container = try makeContainer(url: testStoreURL)
+        let target1Container = try Self.makeContainerWithPersistentTracking()
+        let target2Container = try Self.makeContainerWithPersistentTracking()
         let vc1 = target1Container.viewContext
         let vc2 = target2Container.viewContext
         
@@ -231,12 +180,6 @@ class PersistentHistoryTest: XCTestCase {
         
         // stop monitoring
         await tracker.stopMonitoring()
-        
-        // tear down containers
-        destroyContainer(url: testStoreURL)
-        
-        // await a second
-        await sleep(seconds: 1)
     }
     
     func testPersistentHistoryTrackerBackgroundContext() async throws {
@@ -246,8 +189,8 @@ class PersistentHistoryTest: XCTestCase {
         
         // Create two containers at same URL
         // create 2 containers at same location
-        let target1Container = try makeContainer(url: testStoreURL)
-        let target2Container = try makeContainer(url: testStoreURL)
+        let target1Container = try Self.makeContainerWithPersistentTracking()
+        let target2Container = try Self.makeContainerWithPersistentTracking()
         let vc1 = target1Container.viewContext
         let vc2 = target2Container.viewContext
         
@@ -311,11 +254,5 @@ class PersistentHistoryTest: XCTestCase {
         // stop monitoring
         await tracker1.stopMonitoring()
         await tracker2.stopMonitoring()
-        
-        // tear down containers
-        destroyContainer(url: testStoreURL)
-        
-        // await a second
-        await sleep(seconds: 1)
     }
 }

@@ -6,10 +6,23 @@ import CoreData
 import XCTest
 @testable import RCDataKit
 
-final class FetchRequestBuilderTests: KidsTests {
+final class FetchRequestBuilderTests: PersistentStoreTest {
+    
+    var container: NSPersistentContainer!
+    
+    var viewContext: NSManagedObjectContext {
+        container.viewContext
+    }
+    
+    override func setUp() async throws {
+        try await super.setUp()
+        container = try Self.makeContainer()
+        
+        try addStudentsFromSampleData(context: container.viewContext)
+    }
     
     func testAddingPredicate() throws {
-        let simpsonsRequest = NSFetchRequest<Student>(entityName: "Student")
+        let simpsonsRequest = Student.studentRequest()
             .predicated(simpsonsPredicate)
         
         let simpsonsKids = try viewContext.fetch(simpsonsRequest)
@@ -17,7 +30,7 @@ final class FetchRequestBuilderTests: KidsTests {
     }
     
     func testAddingSortDescriptors() throws {
-        let kidsRequest = NSFetchRequest<Student>(entityName: "Student")
+        let kidsRequest = Student.studentRequest()
             .sorted([NSSortDescriptor(keyPath: \Student.id, ascending: true)])
         
         let allKids = try viewContext.fetch(kidsRequest)
@@ -25,7 +38,7 @@ final class FetchRequestBuilderTests: KidsTests {
     }
     
     func testSortingAndPredicate() throws {
-        let simpsonsRequest = NSFetchRequest<Student>(entityName: "Student")
+        let simpsonsRequest = Student.studentRequest()
             .predicated(simpsonsPredicate)
             .sorted(sortById)
         

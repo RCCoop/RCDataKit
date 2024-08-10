@@ -4,7 +4,19 @@
 
 import XCTest
 
-final class UpdatableManagedObjectTests: CoreDataTest {
+final class UpdatableManagedObjectTests: PersistentStoreTest {
+    
+    var container: NSPersistentContainer!
+    
+    var viewContext: NSManagedObjectContext {
+        container.viewContext
+    }
+    
+    override func setUp() async throws {
+        try await super.setUp()
+        container = try Self.makeContainer()
+    }
+
     func testBasicUpdates() throws {
         let john = Student(context: viewContext, id: 0, firstName: "John", lastName: "Doe")
         try viewContext.save()
