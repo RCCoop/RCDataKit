@@ -6,10 +6,23 @@ import CoreData
 import XCTest
 @testable import RCDataKit
 
-final class PredicateTests: KidsTests {
+final class PredicateTests: PersistentStoreTest {
     
+    var container: NSPersistentContainer!
+    
+    var viewContext: NSManagedObjectContext {
+        container.viewContext
+    }
+    
+    override func setUp() async throws {
+        try await super.setUp()
+        container = try Self.makeContainer()
+        
+        try addStudentsFromSampleData(context: container.viewContext)
+    }
+
     func testBasicSetupPredicates() throws {
-        let simpsonsRequest = studentFetchRequest()
+        let simpsonsRequest = Student.studentRequest()
         simpsonsRequest.sortDescriptors = sortById
         simpsonsRequest.predicate = simpsonsPredicate
         let simpsons = try viewContext.fetch(simpsonsRequest)
@@ -17,7 +30,7 @@ final class PredicateTests: KidsTests {
         XCTAssertEqual(simpsons.count, 3)
         XCTAssertEqual(simpsons.map(\.firstName), ["Bart", "Lisa", "Maggie"])
         
-        let bobsRequest = studentFetchRequest()
+        let bobsRequest = Student.studentRequest()
         bobsRequest.sortDescriptors = sortById
         bobsRequest.predicate = bobsPredicate
         let bobsKids = try viewContext.fetch(bobsRequest)
@@ -25,7 +38,7 @@ final class PredicateTests: KidsTests {
         XCTAssertEqual(bobsKids.count, 3)
         XCTAssertEqual(bobsKids.map(\.firstName), ["Tina", "Gene", "Louise"])
         
-        let soParkRequest = studentFetchRequest()
+        let soParkRequest = Student.studentRequest()
         soParkRequest.sortDescriptors = sortById
         soParkRequest.predicate = southParkPredicate
         let parkKids = try viewContext.fetch(soParkRequest)
@@ -35,7 +48,7 @@ final class PredicateTests: KidsTests {
     }
     
     func testOrPredicate() throws {
-        let request = studentFetchRequest()
+        let request = Student.studentRequest()
         request.sortDescriptors = sortById
         request.predicate = simpsonsPredicate || bobsPredicate
         let kids = try viewContext.fetch(request)
@@ -55,7 +68,7 @@ final class PredicateTests: KidsTests {
     
     func testAndPredicate() throws {
         let idLessThanFivePredicate = NSPredicate(format: "%K < %i", #keyPath(Student.id), 5)
-        let request = studentFetchRequest()
+        let request = Student.studentRequest()
         request.sortDescriptors = sortById
         request.predicate = southParkPredicate && idLessThanFivePredicate
         let kids = try viewContext.fetch(request)
@@ -65,7 +78,7 @@ final class PredicateTests: KidsTests {
     }
     
     func testNotPredicate() throws {
-        let request = studentFetchRequest()
+        let request = Student.studentRequest()
         request.sortDescriptors = sortById
         request.predicate = !bobsPredicate
         let kids = try viewContext.fetch(request)
@@ -85,11 +98,11 @@ final class PredicateTests: KidsTests {
     }
     
     func testObjectIDPredicate() throws {
-        let allStudents = try viewContext.fetch(studentFetchRequest())
+        let allStudents = try viewContext.fetch(Student.studentRequest())
         let simpsonIDs = allStudents
             .filter { $0.lastName == "Simpson" }
             .map { $0.objectID }
-        let idsRequest = studentFetchRequest()
+        let idsRequest = Student.studentRequest()
             .predicated(NSPredicate(managedObjectIds: simpsonIDs))
         let simpsonsKids = try viewContext.fetch(idsRequest)
         
@@ -101,7 +114,7 @@ final class PredicateTests: KidsTests {
         let someTeacher = Teacher(context: viewContext, id: 0, firstName: "Mr", lastName: "Rogers")
         try viewContext.save()
         
-        let request = studentFetchRequest()
+        let request = Student.studentRequest()
         request.predicate = NSPredicate(managedObjectIds: [someTeacher.objectID])
         let result = try viewContext.fetch(request)
         XCTAssertEqual(result.count, 0)
