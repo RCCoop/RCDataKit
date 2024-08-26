@@ -7,81 +7,28 @@
 
 import CoreData
 import XCTest
-
+@testable import RCDataKit
 
 @available(macOS 14.0, iOS 17.0, *)
 final class StagedMigrationTest: PersistentStoreTest {
-
-    func makeMigrationManager() -> NSStagedMigrationManager {
-        let momdURL = Bundle.module.url(forResource: "TestModel", withExtension: "momd")!
-        let modelV1URL = momdURL.appendingPathComponent("Model.mom")
-        let modelV2URL = momdURL.appendingPathComponent("Model2.mom")
-        let modelV3URL = momdURL.appendingPathComponent("Model3.mom")
+    
+    enum ModelVersions: String, PersistentStoreVersion {
+        static var bundle: Bundle { .module }
         
-        guard let model1 = NSManagedObjectModel(contentsOf: modelV1URL),
-              let model2 = NSManagedObjectModel(contentsOf: modelV2URL),
-              let model3 = NSManagedObjectModel(contentsOf: modelV3URL)
-        else { fatalError() }
+        static var modelName: String { "TestModel" }
+                
+        case v1 = "Model"
+        case v2 = "Model2"
+        case v3 = "Model3"
+        case v4 = "Model4"
         
-        let checksum1 = model1.versionChecksum
-        let checksum2 = model2.versionChecksum
-        let checksum3 = model3.versionChecksum
-        
-        let ref1 = NSManagedObjectModelReference(model: model1, versionChecksum: checksum1)
-        let ref2 = NSManagedObjectModelReference(model: model2, versionChecksum: checksum2)
-        let ref3 = NSManagedObjectModelReference(model: model3, versionChecksum: checksum3)
-        
-        let lightweightStageV1toV2 = NSLightweightMigrationStage([checksum1])
-        lightweightStageV1toV2.label = "Lightweight Migration: V1 to V2 adding empty name & id fields"
-        
-        let customStageV2toV3 = NSCustomMigrationStage(migratingFrom: ref2, to: ref3)
-        customStageV2toV3.label = "Custom Migration: V2 to V3 moving json into property fields"
-        customStageV2toV3.willMigrateHandler = { migrationManager, currentStage in
-            guard let container = migrationManager.container
-            else { return }
-            let context = container.newBackgroundContext()
-            context.performAndWait {
-                let fetch = NSFetchRequest<NSManagedObject>(entityName: "Student")
-                fetch.returnsObjectsAsFaults = false
-                if let existingThings = try? context.fetch(fetch) {
-                    print("""
-                    ******************************************************
-                    BEFORE MIGRATION:
-                    decompose jsonData into firstName, lastName, id
-                    \(existingThings)
-                    ******************************************************
-                    """)
-                    for existingThing in existingThings {
-                        let jsonData = existingThing.value(forKey: "data") as? Data
-                        let sampleStudent = jsonData.flatMap { try? JSONDecoder().decode(SampleData.Student.self, from: $0) }
-                        existingThing.setValue(sampleStudent?.firstName, forKey: "firstName")
-                        existingThing.setValue(sampleStudent?.lastName, forKey: "lastName")
-                        existingThing.setValue(sampleStudent?.id ?? -1, forKey: "id")
-                        existingThing.setValue(nil, forKey: "data")
-                    }
-                    try? context.save()
-                }
-            }
+        static func migrationStages() -> [NSMigrationStage] {
+            [
+                stageV1toV2(),
+                stageV2toV3(),
+                stageV3toV4()
+            ]
         }
-        customStageV2toV3.didMigrateHandler = { migrationManager, currentStage in
-            guard let container = migrationManager.container
-            else { return }
-            let context = container.newBackgroundContext()
-            context.performAndWait {
-                let fetch = NSFetchRequest<NSManagedObject>(entityName: "Student")
-                fetch.returnsObjectsAsFaults = false
-                if let existingThings = try? context.fetch(fetch) {
-                    print("""
-                    ******************************************************
-                    AFTER MIGRATION: - no more action needed
-                    \(existingThings)
-                    ******************************************************
-                    """)
-                }
-            }
-        }
-        
-        return NSStagedMigrationManager([lightweightStageV1toV2, customStageV2toV3])
     }
     
     func makeOldContainer(students: [SampleData.Student]) throws -> NSPersistentContainer? {
@@ -126,7 +73,7 @@ final class StagedMigrationTest: PersistentStoreTest {
         guard let oldContainer = try makeOldContainer(students: sampleStudents)
         else { fatalError() }
         
-        let migrator = makeMigrationManager()
+        let migrator = ModelVersions.migrationManager()
         let newContainer = try Self.makeContainerWithStagedMigrations(manager: migrator)
         let context = newContainer.viewContext
         
@@ -140,5 +87,58 @@ final class StagedMigrationTest: PersistentStoreTest {
             XCTAssertNil(oneStudent.school)
             XCTAssertGreaterThanOrEqual(oneStudent.id, 0)
         }
+    }
+}
+
+
+@available(macOS 14.0, *)
+extension StagedMigrationTest.ModelVersions {
+    static func stageV1toV2() -> NSMigrationStage {
+        v1.migrationStage(
+            toVersion: .v2,
+            label: "Lightweight Migration: V1 to V2 adding empty name & id fields"
+        )
+    }
+    
+    static func stageV2toV3() -> NSMigrationStage {
+        v2.migrationStage(
+            toVersion: .v3,
+            label: "Custom Migration: V2 to V3 moving json into property fields"
+        ) { context in
+            let fetch = NSFetchRequest<NSManagedObject>(entityName: "Student")
+            fetch.returnsObjectsAsFaults = false
+            let existingThings = try context.fetch(fetch)
+            print("""
+                ******************************************************
+                BEFORE MIGRATION:
+                decompose jsonData into firstName, lastName, id
+                \(existingThings)
+                ******************************************************
+                """)
+            for existingThing in existingThings {
+                let jsonData = existingThing.value(forKey: "data") as? Data
+                let sampleStudent = jsonData.flatMap { try? JSONDecoder().decode(SampleData.Student.self, from: $0) }
+                existingThing.setValue(sampleStudent?.firstName, forKey: "firstName")
+                existingThing.setValue(sampleStudent?.lastName, forKey: "lastName")
+                existingThing.setValue(sampleStudent?.id ?? -1, forKey: "id")
+                existingThing.setValue(nil, forKey: "data")
+                existingThing.setValue(true, forKey: "isMigrated")
+            }
+        } postMigration: { context in
+            let fetch = NSFetchRequest<NSManagedObject>(entityName: "Student")
+            fetch.returnsObjectsAsFaults = false
+            let existingThings = try context.fetch(fetch)
+            print("""
+                ******************************************************
+                AFTER MIGRATION: - no more action needed
+                \(existingThings)
+                ******************************************************
+                """)
+        }
+
+    }
+    
+    static func stageV3toV4() -> NSMigrationStage {
+        v3.migrationStage(toVersion: .v4, label: "Lightweight Migration v3 to v4: remove `isMigrated` field.")
     }
 }
