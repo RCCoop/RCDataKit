@@ -9,7 +9,7 @@ import CoreData
 import XCTest
 @testable import RCDataKit
 
-@available(macOS 14.0, iOS 17.0, *)
+@available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
 final class StagedMigrationTest: PersistentStoreTest {
     
     enum ModelVersions: String, PersistentStoreVersion {
@@ -70,7 +70,7 @@ final class StagedMigrationTest: PersistentStoreTest {
     
     func testMakeNewContainerOnTopOfOldContainer() throws {
         let sampleStudents = try SampleData.build().students
-        guard let oldContainer = try makeOldContainer(students: sampleStudents)
+        guard let _ = try makeOldContainer(students: sampleStudents)
         else { fatalError() }
         
         let migrator = ModelVersions.migrationManager()
@@ -91,7 +91,7 @@ final class StagedMigrationTest: PersistentStoreTest {
 }
 
 
-@available(macOS 14.0, *)
+@available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
 extension StagedMigrationTest.ModelVersions {
     static func stageV1toV2() -> NSMigrationStage {
         v1.migrationStage(
@@ -115,9 +115,10 @@ extension StagedMigrationTest.ModelVersions {
                 \(existingThings)
                 ******************************************************
                 """)
+            let decoder = JSONDecoder()
             for existingThing in existingThings {
                 let jsonData = existingThing.value(forKey: "data") as? Data
-                let sampleStudent = jsonData.flatMap { try? JSONDecoder().decode(SampleData.Student.self, from: $0) }
+                let sampleStudent = jsonData.flatMap { try? decoder.decode(SampleData.Student.self, from: $0) }
                 existingThing.setValue(sampleStudent?.firstName, forKey: "firstName")
                 existingThing.setValue(sampleStudent?.lastName, forKey: "lastName")
                 existingThing.setValue(sampleStudent?.id ?? -1, forKey: "id")
@@ -139,6 +140,9 @@ extension StagedMigrationTest.ModelVersions {
     }
     
     static func stageV3toV4() -> NSMigrationStage {
-        v3.migrationStage(toVersion: .v4, label: "Lightweight Migration v3 to v4: remove `isMigrated` field.")
+        v3.migrationStage(
+            toVersion: .v4,
+            label: "Lightweight Migration v3 to v4: remove `isMigrated` field."
+        )
     }
 }
