@@ -32,8 +32,6 @@ public struct PreviewStack: CoreDataStack {
     public enum Authors: String, TransactionAuthor {
         case viewContext
         case backgroundContext
-        
-        public var name: String { rawValue }
     }
     
     public var viewContextID: Authors { .viewContext }

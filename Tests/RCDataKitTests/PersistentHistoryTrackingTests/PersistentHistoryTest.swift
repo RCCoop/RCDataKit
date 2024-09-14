@@ -14,10 +14,8 @@ class PersistentHistoryTest: PersistentStoreTest {
     
     enum Authors: String, TransactionAuthor {
         case viewContext1, viewContext2, backgroundContext
-        
-        var name: String { rawValue }
     }
-        
+
     override func tearDown() async throws {
         try await super.tearDown()
         

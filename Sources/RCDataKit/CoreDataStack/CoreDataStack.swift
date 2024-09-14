@@ -31,6 +31,12 @@ public extension TransactionAuthor {
     }
 }
 
+public extension TransactionAuthor where Self: RawRepresentable, RawValue == String {
+    var name: String {
+        rawValue
+    }
+}
+
 public extension Collection where Element: TransactionAuthor {
     var authorNames: [String] {
         map(\.name)
