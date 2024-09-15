@@ -24,3 +24,72 @@ extension NSPredicate {
     }
 }
 
+public func == <T: NSManagedObject, V: Equatable>(_ lhs: KeyPath<T, V>, _ rhs: V) -> NSPredicate {
+    NSComparisonPredicate(
+        leftExpression: NSExpression(
+            forKeyPath: lhs.stringRepresentation
+        ),
+        rightExpression: NSExpression(
+            forConstantValue: rhs
+        ),
+        modifier: .direct,
+        type: .equalTo
+    )
+}
+
+public func != <T: NSManagedObject, V: Equatable>(_ lhs: KeyPath<T, V>, _ rhs: V) -> NSPredicate {
+    !(lhs == rhs)
+}
+
+public func > <T: NSManagedObject, V: Comparable>(_ lhs: KeyPath<T, V>, _ rhs: V) -> NSPredicate {
+    NSComparisonPredicate(
+        leftExpression: NSExpression(
+            forKeyPath: lhs.stringRepresentation
+        ),
+        rightExpression: NSExpression(
+            forConstantValue: rhs
+        ),
+        modifier: .direct,
+        type: .greaterThan
+    )
+}
+
+public func >= <T: NSManagedObject, V: Comparable>(_ lhs: KeyPath<T, V>, _ rhs: V) -> NSPredicate {
+    NSComparisonPredicate(
+        leftExpression: NSExpression(
+            forKeyPath: lhs.stringRepresentation
+        ),
+        rightExpression: NSExpression(
+            forConstantValue: rhs
+        ),
+        modifier: .direct,
+        type: .greaterThanOrEqualTo
+    )
+}
+
+public func < <T: NSManagedObject, V: Comparable>(_ lhs: KeyPath<T, V>, _ rhs: V) -> NSPredicate {
+    NSComparisonPredicate(
+        leftExpression: NSExpression(
+            forKeyPath: lhs.stringRepresentation
+        ),
+        rightExpression: NSExpression(
+            forConstantValue: rhs
+        ),
+        modifier: .direct,
+        type: .lessThan
+    )
+}
+
+public func <= <T: NSManagedObject, V: Comparable>(_ lhs: KeyPath<T, V>, _ rhs: V) -> NSPredicate {
+    NSComparisonPredicate(
+        leftExpression: NSExpression(
+            forKeyPath: lhs.stringRepresentation
+        ),
+        rightExpression: NSExpression(
+            forConstantValue: rhs
+        ),
+        modifier: .direct,
+        type: .lessThanOrEqualTo
+    )
+}
+
