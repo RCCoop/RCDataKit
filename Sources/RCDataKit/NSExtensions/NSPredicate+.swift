@@ -23,3 +23,4 @@ extension NSPredicate {
         self.init(format: "self in %@", managedObjectIds)
     }
 }
+

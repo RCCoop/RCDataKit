@@ -1,9 +1,6 @@
 //
 //  PersistentStoreVersion.swift
 //
-//
-//  Created by Ryan Linn on 8/25/24.
-//
 
 import CoreData
 import UniformTypeIdentifiers
