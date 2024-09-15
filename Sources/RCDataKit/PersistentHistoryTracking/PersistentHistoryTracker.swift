@@ -86,7 +86,7 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
         self.maxTransactionAge = maxTransactionAge
         self.logger = logger
         
-        self.timestampManager = timestampManager ?? DefaultTimestampManager(userDefaults: .standard)
+        self.timestampManager = timestampManager ?? DefaultTimestampManager()
         fetcher = customFetcher ?? DefaultFetcher(currentAuthor: currentAuthor, logger: logger)
         merger = customMerger ?? DefaultMerger()
         cleaner = customCleaner ?? DefaultCleaner(logger: logger)

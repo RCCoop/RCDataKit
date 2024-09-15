@@ -29,27 +29,17 @@ extension PersistentHistoryTimestampManager {
 }
 
 struct DefaultTimestampManager: PersistentHistoryTimestampManager {
-    var defaults: OSAllocatedUnfairLock<UserDefaults>
-    
-    init(userDefaults: UserDefaults) {
-        defaults = OSAllocatedUnfairLock(uncheckedState: userDefaults)
-    }
-    
     func transactionKey<A: TransactionAuthor>(author: A) -> String {
         "PersistentHistoryTransactionDate-" + author.name
     }
     
     func latestHistoryTransactionDate<A>(author: A) -> Date? where A : TransactionAuthor {
         let key = transactionKey(author: author)
-        return defaults.withLock { def in
-            def.object(forKey: key) as? Date
-        }
+        return UserDefaults.standard.object(forKey: key) as? Date
     }
     
     func setLatestHistoryTransactionDate<A>(author: A, date: Date?) where A : TransactionAuthor {
         let key = transactionKey(author: author)
-        defaults.withLock { def in
-            def.set(date, forKey: key)
-        }
+        UserDefaults.standard.set(date, forKey: key)
     }
 }
