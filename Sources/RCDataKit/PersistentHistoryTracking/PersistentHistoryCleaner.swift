@@ -6,7 +6,7 @@ import CoreData
 import Foundation
 
 /// A type that can be used to purge old `NSPersistentHistoryTransaction`s from the persistent store.
-public protocol PersistentHistoryCleaner {
+public protocol PersistentHistoryCleaner: Sendable {
     
     /// The worker function of the `PersistentHistoryCleaner`, which should handle deleting unneeded
     /// `NSPersistentHistoryTransaction`s from the store.

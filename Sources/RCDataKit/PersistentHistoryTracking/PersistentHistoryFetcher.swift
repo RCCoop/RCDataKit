@@ -6,7 +6,7 @@ import CoreData
 import Foundation
 
 /// A type that can be used to fetch `NSPersistentHistoryTransaction`s from the persistent store.
-public protocol PersistentHistoryFetcher {
+public protocol PersistentHistoryFetcher: Sendable {
     
     /// The worker function for `PersistentHistoryFetcher`, which fetches
     /// `NSPersistentHistoryTransaction`s that will be merged into the main context.

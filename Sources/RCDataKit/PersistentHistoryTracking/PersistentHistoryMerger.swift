@@ -7,7 +7,7 @@ import Foundation
 
 /// A type that can be used to merge `NSPersistentHistoryTransaction`s into the persistent coordinator's
 /// view context.
-public protocol PersistentHistoryMerger {
+public protocol PersistentHistoryMerger: Sendable {
     /// After the `PersistentHistoryFetcher` returns an array of
     /// `NSPersistentHistoryTransaction`s, the `PersistentHistoryMerger`'s
     /// job is to merge those transactions into the persistent store.
