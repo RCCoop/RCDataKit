@@ -7,6 +7,7 @@
 
 import CoreData
 import XCTest
+import RCDataKit
 
 class PersistentStoreTest: XCTestCase {
     
@@ -140,19 +141,19 @@ class PersistentStoreTest: XCTestCase {
     }
 
     var simpsonsPredicate: NSPredicate {
-        NSPredicate(format: "%K == 'Simpson'", #keyPath(Student.lastName))
+        \Student.lastName == "Simpson"
     }
     
     var bobsPredicate: NSPredicate {
-        NSPredicate(format: "%K == 'Belcher'", #keyPath(Student.lastName))
+        \Student.lastName == "Belcher"
     }
     
     var southParkPredicate: NSPredicate {
-        NSPredicate(format: "%K BETWEEN %@", #keyPath(Student.id), [3, 6])
+        (\Student.id).between(3, and: 6)
     }
     
     var sortById: [NSSortDescriptor] {
-        [NSSortDescriptor(key: "id", ascending: true)]
+        [.ascending(\Student.id)]
     }
 
     

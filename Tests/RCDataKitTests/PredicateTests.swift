@@ -67,7 +67,7 @@ final class PredicateTests: PersistentStoreTest {
     }
     
     func testAndPredicate() throws {
-        let idLessThanFivePredicate = NSPredicate(format: "%K < %i", #keyPath(Student.id), 5)
+        let idLessThanFivePredicate = \Student.id < 5
         let request = Student.studentRequest()
         request.sortDescriptors = sortById
         request.predicate = southParkPredicate && idLessThanFivePredicate
