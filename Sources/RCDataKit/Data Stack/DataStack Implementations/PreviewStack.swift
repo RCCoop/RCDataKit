@@ -21,7 +21,7 @@ public struct PreviewStack: DataStack {
     public let container: NSPersistentContainer
     
     public init(
-        bundle: Bundle,
+        bundle: Bundle = .main,
         modelName: String
     ) {
         self.container = NSPersistentContainer(bundle: bundle, modelName: modelName, versionName: nil)

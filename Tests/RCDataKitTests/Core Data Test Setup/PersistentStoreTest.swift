@@ -37,14 +37,8 @@ class PersistentStoreTest: XCTestCase {
     // MARK: - Persistent Container Factories
     
     static func makeContainer() throws -> NSPersistentContainer {
-        let description = NSPersistentStoreDescription()
-        description.type = NSInMemoryStoreType
-        
-        let container = NSPersistentContainer(name: modelName, managedObjectModel: mergedModel)
-        container.persistentStoreDescriptions = [description]
-        
-        try container.loadStores()
-        return container
+        let stack = PreviewStack(bundle: .module, modelName: modelName)
+        return stack.container
     }
     
     static func makeContainerWithPersistentTracking() throws -> NSPersistentContainer {

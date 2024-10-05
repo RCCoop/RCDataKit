@@ -4,15 +4,13 @@ Helpful tools for your Core Data
 
 ## What Is It?
 
-Core Data is a mature and powerful tool, but it takes plenty of time to get the hang of its intricacies. I’ve been using it heavily for years, and building a bunch of helper tools to make my life easier. RCDataKit is a bunch of my personal tools that have been cleaned up enough for me to feel they’re worth sharing with the world.
+Core Data is a mature and powerful tool, but it takes some time to get used to its intricacies. I’ve been using it heavily for years, and building a bunch of helper tools to make my life easier. RCDataKit is the latest version of those tools.
 
-There are a lot of tools out there (CoreStore, PredicateKit) that are a lot more than what I’ve put here, and take most of the scary, non-type-safe work out of your hands. RCDataKit is intended to be a helper for your Core Data implementation, not a massive wrapper around it. It won’t prevent you from breaking things if you don’t understand Core Data, but hopefully it will help you with that understanding if you are interested in learning more. I’m still learning, and I’d love if my experience can help you, too.
+There are really amazing tools already out there for Core Data ([CoreStore](https://github.com/JohnEstropia/CoreStore), [PredicateKit](https://github.com/ftchirou/PredicateKit) to name a few of my favorites) that take most of the scary, non-type-safe work out of your hands. RCDataKit isn't intended to replace your use of Core Data tools as much as those libraries, though. It won’t prevent you from breaking things if you don’t understand Core Data, but hopefully it will help you with that understanding if you are interested in learning more.
 
 ## Why Bother With Core Data?
 
-Core Data stinks! SwiftData is newer and the way of the future! Or Realm, or all kinds of other options! 
-
-Yes! Core Data is old and can be annoying to work with, and maybe will be replaced permanently by SwiftData some day. But for now, I’m still using Core Data in my own projects because:
+Sure. Core Data is old and can be annoying to work with, and maybe will be replaced permanently by SwiftData some day. But for now, I’m still using Core Data in my own projects because:
 
 1. It’s a native Apple tool, which means it will probably stay available to anyone writing iOS/MacOS apps for a long time.
 2. SwiftData, while very exciting and new, is seriously lacking in some finer controls that I’ve gotten used to with Core Data.
@@ -23,7 +21,7 @@ I still assume SwiftData will be the way of the future, but until I can make it 
 
 - [Stack Helpers](#stack-helpers)
   - [TransactionAuthor Protocol](#transactionauthor-protocol)
-  - [CoreDataStack Protocol](#coredatastack-protocol)
+  - [DataStack Protocol](#datastack-protocol)
 - [Model Helpers](#model-helpers)
   - [PersistentStoreVersion Protocol](#persistentstoreversion-protocol)
   - [PersistentHistoryTracker Actor](#persistenthistorytracker-actor)
@@ -32,6 +30,7 @@ I still assume SwiftData will be the way of the future, but until I can make it 
   - [Persistable Protocol](#persistable-protocol)
   - [NSManagedObjectContext Helpers](#nsmanagedobjectcontext-helpers)
   - [NSFetchRequest Helpers](#nsfetchrequest-helpers)
+  - [NSPredicate Helpers](#nspredicate-helpers)
 
 ## Stack Helpers:
 
@@ -56,14 +55,14 @@ enum Authors: String, TransactionAuthor {
 
 The idea here is that you’ll want one case for each of your main-thread contexts that access your data store (view context from your app), and as many named background contexts as you like to help keep track of who or what is writing to your store.
 
-### CoreDataStack Protocol
+### DataStack Protocol
 
-Another simple protocol. This one wraps your `NSPersistentContainer` (and I’ll add some pre-made implementations eventually), and assigns a `TransactionAuthor` type to it so you can get preconfigured contexts from the container.
+Another simple protocol, this one wraps your `NSPersistentContainer` and assigns a `TransactionAuthor` type to it so you can get preconfigured contexts from the container.
 
 ```swift
-let myStack: CoreDataStack // has associatedType `Authors`
+let myStack: DataStack // has associatedType `Authors`
 
-// Get the viewContext -- a NSManagedObjectContext with 
+// Get the viewContext -- a NSManagedObjectContext where 
 // transactionAuthor == myStack.viewContextID.name
 let viewContext = myStack.viewContext 
 
@@ -71,11 +70,15 @@ let viewContext = myStack.viewContext
 let bgContext = myStack.backgroundContext(author: .localEditing)
 ```
 
+There are a few implementations of `DataStack` available here:
+- `PreviewStack` is an in-memory store for use in SwiftUI previews or other non-persisted environments.
+- `SingleStoreStack` is a SQLite-backed stack with a single store, and initialization options for Persistent History Tracking and Staged Migrations.
+
 ## Model Helpers:
 
 ### PersistentStoreVersion Protocol
 
-Migrating your Model from one version to the next used to be such a pain— Lightweight Migrations are easy enough, but Custom Migrations not so much. Setting up your environment to perform either was confusing, and [Apple’s documentation](https://developer.apple.com/documentation/coredata/staged_migrations) is even sparser than for the old migrations system. But now we have [Staged Migrations](https://developer.apple.com/videos/play/wwdc2022/10120/)! Unfortunately, Apple’d documentation is practically nonexistent once again. Thanks to [Pol Piela](https://www.polpiella.dev/staged-migrations) and [FatBobMan](https://fatbobman.com/en/posts/what-s-new-in-core-data-in-wwdc23/) for picking up the slack.
+Migrating your Model from one version to the next used to be such a pain— Lightweight Migrations are easy enough, but Custom Migrations not so much. Setting up your environment to perform either was confusing, and [Apple’s documentation](https://developer.apple.com/documentation/coredata/staged_migrations) is even sparser than for the old migrations system. But now we have [Staged Migrations](https://developer.apple.com/videos/play/wwdc2022/10120/)! Unfortunately, Apple’s documentation is practically nonexistent once again. Thanks to [Pol Piela](https://www.polpiella.dev/staged-migrations) and [FatBobMan](https://fatbobman.com/en/posts/what-s-new-in-core-data-in-wwdc23/) for picking up the slack.
 
 With the `PersistentStoreVersion` protocol, I’ve built a bunch of useful helpers for getting your migrations set up.
 
@@ -132,6 +135,14 @@ container.persistentStoreDescriptions
         forKey: NSPersistentStoreStagedMigrationManagerOptionKey)
 ```
 
+- Alternately, just pass your `PersistentStoreVersion` into the initializer for `SingleStoreStack`:
+
+```swift
+let stack = try SingleStoreStack(
+                    versionKey: ModelVersions.self, 
+                    mainAuthor: Authors.iOSViewContext)
+```
+
 ### PersistentHistoryTracker Actor
 
 Persistent History Tracking can be really confusing. `PersistentHistoryTracker` is an actor that attaches to your `NSPersistentContainer` in order to manage all that tracking for you. It borrows very heavily from tutorials and projects by [Antoine Van Der Lee](https://www.avanderlee.com/swift/persistent-history-tracking-core-data/) and [FatBobMan](https://fatbobman.com/en/posts/persistenthistorytracking/) (especially FatBobMan’s [PersistentHistoryTrackingKit](https://github.com/fatbobman/PersistentHistoryTrackingKit/tree/main), thank you!), with some added helpers based on the `TransactionAuthor` protocol.
@@ -145,7 +156,16 @@ let tracker = PersistentHistoryTracker(
 tracker.startMonitoring()
 ```
 
-I’ll work on adding more relevant helpers that deal with persistent history transactions in the future.
+You can also enable tracking in `SingleStoreStack` by passing in an instance of `PersistentHistoryTrackingOptions` to the initializer:
+
+```swift
+let stack = try SingleStoreStack(
+                    versionKey: ModelVersions.self, 
+                    mainAuthor: Authors.iOSViewContext,
+                    persistentHistoryOptions: .init())
+
+stack.historyTracker?.startMonitoring()
+```
 
 ## CRUD Helpers:
 
@@ -157,11 +177,11 @@ Make your `NSManagedObject` subclass conform to the `Updatable` protocol to get 
 let rc = Person(...)
 
 rc.update(\.age, value: 15) // now I'm 15 years old!
-rc.updateIfAvailable(\.age, value: Optional<Int>.none) // still 15, not nil!
+rc.updateIfAvailable(\.age, value: nil) // still 15, not nil!
 rc.update(\.age, value: 16, minimumChange: 2) // still 15, because I only want to age in 2-year increments.
 
 rc.add(\.friend, relation: dan) // dan is now my friend
-rc.add(\.friend, relation: Optional<Person>.none) // nothing happens, because nobody's there.
+rc.add(\.friend, relation: nil) // nothing happens, because nobody's there.
 rc.remove(\.friend, relation: dan) // dan's not my friend anymore.
 ```
 
@@ -235,7 +255,27 @@ try context.removeInstances(of: Person.self, matching: someNSPredicate)
 
 And some functions in extensions of `NSPredicate` , `NSFetchRequest`, `NSSortDescriptor`
 
-- `NSPredicates` can be compounded with `&&`, `||`, and `!=`
+- `NSPredicate`:
+    - Combine with `&&`, `||`, and `!=`.
+    - Create with KeyPath comparators like `==`, `>`, `!=` and so on.
+```swift
+let olderThanDirt = \Person.age > 1000
+let notFred = \Person.name != "Fred"
+```
+    - Also create with `in` or `between` for number properties:
+```swift
+// note the parentheses around the KeyPath
+let isTeenager = (\Person.age).between(13, and: 19)
+let isOddTeen = (\Person.age).in([11, 13, 15, 17, 19])
+```
+    - For `String` properties, add options to the predicate like so:
+```swift
+let definitelyNotFred = \(Person.name).notEqual(
+            to: "Fred", 
+            options: [.caseInsensitive, .diacriticInsensitive])
+```
+    - For a more robust, type-safe `NSPredicate` system, check out [PredicateKit](https://github.com/ftchirou/PredicateKit)
+    
 - `NSFetchRequest`s can be built with chaining methods like:
 
 ```swift
