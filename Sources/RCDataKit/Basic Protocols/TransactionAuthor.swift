@@ -6,7 +6,7 @@ import Foundation
 
 // MARK: - TransactionAuthor Type
 
-/// A type that is used with a `CoreDataStack` to describe all possible authors to the persistent store
+/// A type that is used with a `DataStack` to describe all possible authors to the persistent store
 /// for the current app. One of the authors needs to be the view context for the current target, and other options
 /// could be the view contexts for other targets, and any background context type that you may use.
 public protocol TransactionAuthor: CaseIterable, Sendable {

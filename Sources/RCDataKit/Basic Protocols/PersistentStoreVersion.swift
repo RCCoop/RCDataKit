@@ -44,15 +44,22 @@ public extension PersistentStoreVersion where Self: RawRepresentable, RawValue =
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
 extension PersistentStoreVersion {
     static var modelURL: URL {
-        bundle.url(forResource: modelName, withExtension: "momd")!
+        NSManagedObjectModel.modelURL(modelName: modelName)
     }
     
     var versionURL: URL {
-        Self.modelURL.appendingPathComponent(versionName + ".mom", conformingTo: .managedObjectModel)
+        NSManagedObjectModel
+            .modelVersionURL(
+                bundle: Self.bundle,
+                modelName: Self.modelName,
+                versionName: versionName)
     }
     
     var modelVersion: NSManagedObjectModel {
-        NSManagedObjectModel(contentsOf: versionURL)!
+        NSManagedObjectModel(
+            bundle: Self.bundle,
+            modelName: Self.modelName,
+            versionName: versionName)!
     }
     
     var versionChecksum: String {
@@ -65,12 +72,6 @@ extension PersistentStoreVersion {
 }
 
 // MARK: - Helpers:
-
-extension UTType {
-    static var managedObjectModel: UTType {
-        UTType(tag: "mom", tagClass: .filenameExtension, conformingTo: nil)!
-    }
-}
 
 enum MigrationError: Error {
     case persistentContainerNotFound

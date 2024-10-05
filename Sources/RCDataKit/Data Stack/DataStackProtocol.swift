@@ -1,15 +1,15 @@
 //
-//  CoreDataStack.swift
+//  DataStackProtocol.swift
 //  
 
 import CoreData
 import Foundation
 
 /// A type that provides some standard helper tools for managing a CoreData persistent store.
-public protocol CoreDataStack {
+public protocol DataStack {
     associatedtype Authors: TransactionAuthor
     
-    /// The `NSPersistentContainer` that the `CoreDataStack` wraps.
+    /// The `NSPersistentContainer` that the `DataStack` wraps.
     var container: NSPersistentContainer { get }
     
     /// The value of `Authors` to be used in the current target's view context.
@@ -18,7 +18,7 @@ public protocol CoreDataStack {
 
 // MARK: - Common Functions
 
-extension CoreDataStack {
+extension DataStack {
     /// Returns the viewContext for the stack's persistent container, configured by the stack.
     ///
     /// - Warning: You should not change the `transactionAuthor` or `name` properties of the context,

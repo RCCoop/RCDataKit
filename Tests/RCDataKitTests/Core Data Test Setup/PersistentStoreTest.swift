@@ -13,7 +13,7 @@ class PersistentStoreTest: XCTestCase {
     
     private static let modelName = "TestModel"
     private static var mergedModel: NSManagedObjectModel {
-        .mergedModel(from: [.module])!
+        NSManagedObjectModel(bundle: .module, modelName: modelName)!
     }
         
     private static var diskLocation: URL {
@@ -43,15 +43,7 @@ class PersistentStoreTest: XCTestCase {
         let container = NSPersistentContainer(name: modelName, managedObjectModel: mergedModel)
         container.persistentStoreDescriptions = [description]
         
-        var loadingError: Error?
-        container.loadPersistentStores { description, error in
-            loadingError = error
-        }
-        
-        if let loadingError {
-            throw loadingError
-        }
-        
+        try container.loadStores()
         return container
     }
     
@@ -62,13 +54,7 @@ class PersistentStoreTest: XCTestCase {
         description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
         
-        var error: Error?
-        container.loadPersistentStores { _, err in
-            if let err { error = err }
-        }
-        if let error {
-            throw error
-        }
+        try container.loadStores()
         return container
     }
     
@@ -83,19 +69,12 @@ class PersistentStoreTest: XCTestCase {
         
         let persistentContainer = NSPersistentContainer(name: modelName, managedObjectModel: modelV1)
         if let description = persistentContainer.persistentStoreDescriptions.first {
-            description.shouldMigrateStoreAutomatically = false
-            description.shouldInferMappingModelAutomatically = false
+//            description.shouldMigrateStoreAutomatically = false
+//            description.shouldInferMappingModelAutomatically = false
             description.url = diskLocation
         }
         
-        var error: Error?
-        persistentContainer.loadPersistentStores { _, err in
-            if let err { error = err }
-        }
-        if let error {
-            throw error
-        }
-        
+        try persistentContainer.loadStores()
         return persistentContainer
     }
         
@@ -108,13 +87,7 @@ class PersistentStoreTest: XCTestCase {
 //        description.shouldInferMappingModelAutomatically = false
         description.setOption(manager, forKey: NSPersistentStoreStagedMigrationManagerOptionKey)
         
-        var error: Error?
-        container.loadPersistentStores { _, err in
-            if let err { error = err }
-        }
-        if let error {
-            throw error
-        }
+        try container.loadStores()
         return container
     }
     

@@ -119,4 +119,18 @@ final class PredicateTests: PersistentStoreTest {
         let result = try viewContext.fetch(request)
         XCTAssertEqual(result.count, 0)
     }
+    
+    func testComparisonPredicates() {
+        
+        // >
+        let greaterThan = \Student.id > 0
+        let alsoGreaterThan = \Student.id > 5
+        
+        // <
+        
+        // >=
+        
+        // <=
+        
+    }
 }

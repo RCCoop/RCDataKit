@@ -36,7 +36,7 @@ extension PersistentHistoryTracker {
     /// `TransactionAuthors.allCases` list.
     public struct DefaultFetcher: PersistentHistoryFetcher {
         public var currentAuthor: Author
-        public var logger: CoreDataStackLogger?
+        public var logger: DataStackLogger?
         
         public func fetchTransactions(workerContext: NSManagedObjectContext, minimumDate: Date) throws -> [NSPersistentHistoryTransaction] {
             try workerContext.performAndWait {
@@ -76,7 +76,7 @@ extension PersistentHistoryTracker {
     /// scope (like CloudKit transactions?).
     public struct AlternateDefaultFetcher: PersistentHistoryFetcher {
         public var currentAuthor: Author
-        public var logger: CoreDataStackLogger?
+        public var logger: DataStackLogger?
         
         public func fetchTransactions(workerContext: NSManagedObjectContext, minimumDate: Date) throws -> [NSPersistentHistoryTransaction] {
             try workerContext.performAndWait {

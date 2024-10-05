@@ -8,7 +8,7 @@ import XCTest
 
 class PersistentHistoryTest: PersistentStoreTest {
     
-    var timestampManager = DefaultTimestampManager(userDefaults: .standard)
+    var timestampManager = DefaultTimestampManager()
     
     // MARK: - Setup
     

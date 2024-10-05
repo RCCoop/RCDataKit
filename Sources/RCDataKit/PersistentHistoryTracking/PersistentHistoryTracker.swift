@@ -34,7 +34,7 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
     var timestampManager: PersistentHistoryTimestampManager
     
     /// Logger
-    var logger: CoreDataStackLogger?
+    var logger: DataStackLogger?
 
     private var notificationsTask: Task<(), Never>?
     
@@ -65,7 +65,7 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
     ///                           custom cleaner is provided, a default one is used that removes
     ///                           all transactions with `author` corresponding to any of
     ///                           the tracker's `Authors` type.
-    ///   - logger:               An instance of `CoreDataStackLogger` to handle logging.
+    ///   - logger:               An instance of `DataStackLogger` to handle logging.
     ///
     /// - Important: In order to enable persistent history tracking, the container's store description must
     ///              set the `NSPersistentHistoryTrackingKey` and
@@ -79,7 +79,7 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
         customFetcher: PersistentHistoryFetcher? = nil,
         customMerger: PersistentHistoryMerger? = nil,
         customCleaner: PersistentHistoryCleaner? = nil,
-        logger: CoreDataStackLogger? = DefaultLogger()
+        logger: DataStackLogger? = DefaultLogger()
     ) {
         self.container = container
         self.currentAuthor = currentAuthor

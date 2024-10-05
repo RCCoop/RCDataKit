@@ -31,7 +31,7 @@ public protocol PersistentHistoryCleaner: Sendable {
 
 extension PersistentHistoryTracker {
     struct DefaultCleaner: PersistentHistoryCleaner {
-        var logger: CoreDataStackLogger?
+        var logger: DataStackLogger?
         
         func cleanTransactions(workerContext: NSManagedObjectContext, cleanBeforeDate: Date) throws {
             let deleteHistoryRequest = NSPersistentHistoryChangeRequest.deleteHistory(before: cleanBeforeDate)
