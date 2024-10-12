@@ -258,7 +258,7 @@ extension ImportablePerson: Persistable {
     // Then, for each item in the import operation, this function does the import:
     func importIntoContext(
         _ context: NSManagedObjectContext,
-        importerData: ImporterData
+        importerData: inout ImporterData
     ) -> PersistenceResult {
         let persistedPerson = PersistentPerson(context: context)
         persistedPerson.firstName = firstName

@@ -58,12 +58,14 @@ public protocol Persistable {
     ///   - context:      The `NSManagedObjectContext` to write the item into.
     ///   - importerData: An instance of this type's `ImporterData` created by the type's
     ///                   `generateImporterData(objects:context:)` function.
+    ///                   `importerData` is an `inout` parameter, so you may modify it as
+    ///                   you import more objects.
     ///
     /// - Returns: An instance of `PersistableResult` describing the action taken to write the item's
     ///            data into the context.
     func importIntoContext(
         _ context: NSManagedObjectContext,
-        importerData: ImporterData
+        importerData: inout ImporterData
     ) -> PersistenceResult
 }
 
@@ -112,10 +114,10 @@ extension NSManagedObjectContext {
     public func importPersistableObjects<T: Persistable>(
         _ objects: [T]
     ) throws -> [PersistenceResult] {
-        let importerData = try T.generateImporterData(objects: objects, context: self)
+        var importerData = try T.generateImporterData(objects: objects, context: self)
         
         let resultsArray = objects.map {
-            $0.importIntoContext(self, importerData: importerData)
+            $0.importIntoContext(self, importerData: &importerData)
         }
         
         return resultsArray
@@ -144,10 +146,10 @@ extension NSManagedObjectContext {
     public func importPersistableObjects<T: Persistable & Identifiable>(
         _ objects: [T]
     ) throws -> [T.ID : PersistenceResult] {
-        let importerData = try T.generateImporterData(objects: objects, context: self)
+        var importerData = try T.generateImporterData(objects: objects, context: self)
         
         let resultsDict = objects.reduce(into: [:]) {
-            $0[$1.id] = $1.importIntoContext(self, importerData: importerData)
+            $0[$1.id] = $1.importIntoContext(self, importerData: &importerData)
         }
         
         return resultsDict

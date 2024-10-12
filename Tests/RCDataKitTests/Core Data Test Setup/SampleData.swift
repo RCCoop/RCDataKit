@@ -45,7 +45,7 @@ extension SampleData.Teacher: Persistable {
         // nothing
     }
     
-    func importIntoContext(_ context: NSManagedObjectContext, importerData: Void) -> PersistenceResult {
+    func importIntoContext(_ context: NSManagedObjectContext, importerData: inout Void) -> PersistenceResult {
         let newTeach = Teacher(context: context, id: id, firstName: firstName, lastName: lastName)
         return .insert(newTeach.objectID)
     }
@@ -63,7 +63,7 @@ extension SampleData.School: Persistable {
         return ImporterData(teachers: keyed)
     }
     
-    func importIntoContext(_ context: NSManagedObjectContext, importerData: ImporterData) -> PersistenceResult {
+    func importIntoContext(_ context: NSManagedObjectContext, importerData: inout ImporterData) -> PersistenceResult {
         let newSchool = School(context: context, id: id, name: name)
         newSchool.teacher = importerData.teachers[teacher]
         return .insert(newSchool.objectID)
@@ -95,7 +95,7 @@ extension SampleData.Student: Persistable {
         return data
     }
     
-    func importIntoContext(_ context: NSManagedObjectContext, importerData: ImporterData) -> PersistenceResult {
+    func importIntoContext(_ context: NSManagedObjectContext, importerData: inout ImporterData) -> PersistenceResult {
         let newSchool = importerData.schools[school]
         
         if let existingStudent = importerData.existingStudents[id] {
