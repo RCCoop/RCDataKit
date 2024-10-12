@@ -27,7 +27,7 @@ public struct PreviewStack: DataStack {
         self.container = NSPersistentContainer(bundle: bundle, modelName: modelName, versionName: nil)
         
         container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
-        container.persistentStoreDescriptions.first!.type = NSInMemoryStoreType
+//        container.persistentStoreDescriptions.first!.type = NSInMemoryStoreType
         
         do {
             try container.loadStores()

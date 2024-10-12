@@ -66,6 +66,7 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     ///
     /// - Parameters:
     ///   - bundle:                   The bundle in which to find the ManagedObjectModel file.
+    ///   - storeURL:                 If set, the exact location for the PersistentStore.
     ///   - modelName:                The title of the ManagedObjectModel file.
     ///   - modelVersion:             The title of the version to use of the ManagedObjectModel. If no version
     ///                               is given, the version specified by the model file is used.
@@ -76,6 +77,7 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     ///                               from the store, but without custom history tracking.
     public init(
         bundle: Bundle = .main,
+        storeURL: URL? = nil,
         modelName: String,
         modelVersion: String? = nil,
         mainAuthor: Authors,
@@ -88,13 +90,18 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
                 storeDescription: desc,
                 viewContext: context)
         }
+        let urlConfiguration: SingleStoreStackConfiguration = { (desc, context) in
+            if let storeURL {
+                desc.url = storeURL
+            }
+        }
         
         try self.init(
             bundle: bundle,
             modelName: modelName,
             modelVersion: modelVersion,
             mainAuthor: mainAuthor,
-            configurations: [persistentHistoryConfiguration])
+            configurations: [persistentHistoryConfiguration, urlConfiguration])
         
         self.historyTracker = persistentHistoryOptions?.tracker(currentAuthor: mainAuthor, container: container)
     }
@@ -103,6 +110,7 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     /// enable Persistent History Tracking.
     ///
     /// - Parameters:
+    ///   - storeURL:                 If set, the exact location for the PersistentStore.
     ///   - versionKey:               The `PersistentStoreVersion` type to use in setting
     ///                               up the persistent store and its staged version migration chain.
     ///   - currentVersion:           The version to use of the ManagedObjectModel. If no version
@@ -114,6 +122,7 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     ///                               from the store, but without custom history tracking.
     @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
     public init<V: PersistentStoreVersion>(
+        storeURL: URL? = nil,
         versionKey: V.Type,
         currentVersion: V? = nil,
         mainAuthor: Authors,
@@ -124,6 +133,11 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
                 options: persistentHistoryOptions,
                 storeDescription: desc,
                 viewContext: context)
+        }
+        let urlConfiguration: SingleStoreStackConfiguration = { (desc, context) in
+            if let storeURL {
+                desc.url = storeURL
+            }
         }
         let versioningConfiguration: SingleStoreStackConfiguration = { (desc, context) in
             desc.shouldMigrateStoreAutomatically = true
@@ -136,6 +150,6 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
             modelName: V.modelName,
             modelVersion: currentVersion?.versionName,
             mainAuthor: mainAuthor,
-            configurations: [persistentHistoryConfiguration, versioningConfiguration])
+            configurations: [persistentHistoryConfiguration, urlConfiguration, versioningConfiguration])
     }
 }
