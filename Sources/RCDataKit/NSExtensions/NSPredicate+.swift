@@ -133,7 +133,10 @@ extension KeyPath where Root: NSManagedObject, Value: Comparable {
                 forKeyPath: stringRepresentation
             ),
             rightExpression: NSExpression(
-                forConstantValue: [range.lowerBound, range.upperBound]
+                forConstantValue: [
+                    NSExpression(forConstantValue: range.lowerBound),
+                    NSExpression(forConstantValue: range.upperBound)
+                ]
             ),
             modifier: .direct,
             type: .between

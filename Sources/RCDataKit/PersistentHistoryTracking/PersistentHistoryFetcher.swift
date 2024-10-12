@@ -58,7 +58,7 @@ extension PersistentHistoryTracker {
             if let historyFetchRequest = NSPersistentHistoryTransaction.fetchRequest {
                 let subPredicates = currentAuthor.allOtherAuthors.map {
                     NSPredicate(format: "%K == %@",
-                                #keyPath(NSPersistentHistoryTransaction.contextName),
+                                #keyPath(NSPersistentHistoryTransaction.author),
                                 $0.name)
                 }
                 historyFetchRequest.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: subPredicates)
@@ -84,7 +84,7 @@ extension PersistentHistoryTracker {
                 
                 if let historyFetchRequest = NSPersistentHistoryTransaction.fetchRequest {
                     historyFetchRequest.predicate = NSPredicate(format: "%K != %@",
-                                                                #keyPath(NSPersistentHistoryTransaction.contextName),
+                                                                #keyPath(NSPersistentHistoryTransaction.author),
                                                                 currentAuthor.name)
                     request.fetchRequest = historyFetchRequest
                 }
