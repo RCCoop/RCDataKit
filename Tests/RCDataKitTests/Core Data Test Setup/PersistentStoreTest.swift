@@ -41,18 +41,21 @@ class PersistentStoreTest: XCTestCase {
         return stack.container
     }
     
-    static func makeContainerWithPersistentTracking() throws -> NSPersistentContainer {
-        let container = NSPersistentContainer(name: modelName, managedObjectModel: mergedModel)
-        let description = container.persistentStoreDescriptions.first!
-        description.url = diskLocation
-        description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
-        description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+    static func makeStackWithPersistentTracking<A: TransactionAuthor>(mainAuthor: A) throws -> SingleStoreStack<A> {
+        let persistentHistoryOptions = PersistentHistoryTrackingOptions()
+        let store = try SingleStoreStack(
+            bundle: .module,
+            storeURL: diskLocation,
+            modelName: modelName,
+            modelVersion: nil,
+            mainAuthor: mainAuthor,
+            persistentHistoryOptions: persistentHistoryOptions)
         
-        try container.loadStores()
-        return container
+        return store
     }
     
     static func makeContainerForOriginalModel() throws -> NSPersistentContainer {
+        
         let momdURL = Bundle.module.url(forResource: "TestModel", withExtension: "momd")
         let modelV1URL = momdURL.map { $0.appendingPathComponent("Model.mom") }
         let modelV1 = modelV1URL.flatMap { NSManagedObjectModel(contentsOf: $0) }
@@ -73,16 +76,16 @@ class PersistentStoreTest: XCTestCase {
     }
         
     @available(macOS 14.0, iOS 17.0, *)
-    static func makeContainerWithStagedMigrations(manager: NSStagedMigrationManager) throws -> NSPersistentContainer {
-        let container = NSPersistentContainer(name: modelName, managedObjectModel: mergedModel)
-        let description = container.persistentStoreDescriptions.first!
-        description.url = diskLocation
-//        description.shouldMigrateStoreAutomatically = false
-//        description.shouldInferMappingModelAutomatically = false
-        description.setOption(manager, forKey: NSPersistentStoreStagedMigrationManagerOptionKey)
-        
-        try container.loadStores()
-        return container
+    static func makeContainerWithStagedMigrations<
+        V: PersistentStoreVersion,
+        A: TransactionAuthor
+    >(
+        key: V.Type,
+        mainAuthor: A
+    ) throws -> NSPersistentContainer {
+        let stack = try SingleStoreStack(storeURL: diskLocation, versionKey: key, mainAuthor: mainAuthor)
+
+        return stack.container
     }
     
     // MARK: - General Helper Functions

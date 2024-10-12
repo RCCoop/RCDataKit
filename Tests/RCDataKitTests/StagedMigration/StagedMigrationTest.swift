@@ -31,6 +31,10 @@ final class StagedMigrationTest: PersistentStoreTest {
         }
     }
     
+    enum Authors: String, TransactionAuthor {
+        case viewContext
+    }
+    
     func makeOldContainer(students: [SampleData.Student]) throws -> NSPersistentContainer? {
         let oldContainer = try Self.makeContainerForOriginalModel()
         guard let studentEntity = oldContainer.managedObjectModel.entitiesByName["Student"]
@@ -73,8 +77,7 @@ final class StagedMigrationTest: PersistentStoreTest {
         guard let _ = try makeOldContainer(students: sampleStudents)
         else { fatalError() }
         
-        let migrator = ModelVersions.migrationManager()
-        let newContainer = try Self.makeContainerWithStagedMigrations(manager: migrator)
+        let newContainer = try Self.makeContainerWithStagedMigrations(key: ModelVersions.self, mainAuthor: Authors.viewContext)
         let context = newContainer.viewContext
         
         let studentsRequest = Student.studentRequest()

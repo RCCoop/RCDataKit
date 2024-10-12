@@ -26,22 +26,15 @@ class PersistentHistoryTest: PersistentStoreTest {
     
     func testFetcher() async throws {
         // create 2 containers at same location
-        let target1Container = try Self.makeContainerWithPersistentTracking()
-        let target2Container = try Self.makeContainerWithPersistentTracking()
-        let vc1 = target1Container.viewContext
-        let vc2 = target2Container.viewContext
-        
-        // set view context names of each container to VC1 and VC2
-        vc1.name = Authors.viewContext1.name
-        vc2.name = Authors.viewContext2.name
-        
-        // Create Fetcher
+        let target1Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext1)
+        let target2Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext2)
+        let vc1 = target1Stack.viewContext
+        let vc2 = target2Stack.viewContext
+                
+        // Get Fetcher
         let startDate = Date()
-        let bgContext = target1Container.newBackgroundContext()
-//        bgContext.name = Authors.backgroundContext.name
-        let fetcher = PersistentHistoryTracker.DefaultFetcher(
-            currentAuthor: Authors.viewContext1,
-            logger: DefaultLogger())
+        let bgContext = target1Stack.backgroundContext(author: .backgroundContext)
+        let fetcher = await target1Stack.historyTracker!.fetcher
         
         // create a thing in each view context
         try vc1.performAndWait {
@@ -70,21 +63,14 @@ class PersistentHistoryTest: PersistentStoreTest {
     }
     
     func testCleaner() async throws {
-        let logger = DefaultLogger()
-        
         // create 2 containers at same location
-        let target1Container = try Self.makeContainerWithPersistentTracking()
-        let target2Container = try Self.makeContainerWithPersistentTracking()
-        let vc1 = target1Container.viewContext
-        let vc2 = target2Container.viewContext
-        
-        // set view context names of each container to VC1 and VC2
-        vc1.name = Authors.viewContext1.name
-        vc2.name = Authors.viewContext2.name
+        let target1Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext1)
+        let target2Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext2)
+        let vc1 = target1Stack.viewContext
+        let vc2 = target2Stack.viewContext
         
         // Prepare to create Fetcher and Cleaner
-        let bgContext = target1Container.newBackgroundContext()
-//        bgContext.name = Authors.backgroundContext.name
+        let bgContext = target1Stack.backgroundContext(author: .backgroundContext)
                 
         // Perform Actions
         
@@ -103,17 +89,14 @@ class PersistentHistoryTest: PersistentStoreTest {
             try vc2.save()
         }
         
-        // Create Cleaner & Fetcher
-        
-        let fetcher = PersistentHistoryTracker.DefaultFetcher(
-            currentAuthor: Authors.viewContext1,
-            logger: logger)
-        let cleaner = PersistentHistoryTracker<Authors>.DefaultCleaner(logger: logger)
+        // Create Cleaner & Fetcher for testing
+        let fetcher = await target1Stack.historyTracker!.fetcher
+        let cleaner = await target1Stack.historyTracker!.cleaner
         
         // Check number of transactions before cleaning == 2
         let transactions = try fetcher.fetchTransactions(workerContext: bgContext, minimumDate: .distantPast)
         XCTAssertEqual(transactions.count, 2)
-        XCTAssertEqual(Set([Authors.viewContext2.name]), Set(transactions.map(\.contextName)))
+        XCTAssertEqual(Set([Authors.viewContext2.name]), Set(transactions.map(\.author)))
         
         // Perform cleaning
         try cleaner.cleanTransactions(workerContext: bgContext, cleanBeforeDate: Date())
@@ -126,22 +109,16 @@ class PersistentHistoryTest: PersistentStoreTest {
     func testPersistentHistoryTracker() async throws {
         // Create two containers at same URL
         // create 2 containers at same location
-        let target1Container = try Self.makeContainerWithPersistentTracking()
-        let target2Container = try Self.makeContainerWithPersistentTracking()
-        let vc1 = target1Container.viewContext
-        let vc2 = target2Container.viewContext
+        let target1Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext1)
+        let target2Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext2)
+        let vc1 = target1Stack.viewContext
+        let vc2 = target2Stack.viewContext
         
-        // set view context names of each container to VC1 and VC2
-        vc1.name = Authors.viewContext1.name
-        vc2.name = Authors.viewContext2.name
-
         // ViewContext1.retainsRegisteredObjects = true
         vc1.retainsRegisteredObjects = true
 
         // Create PersistentHistoryTracker for one of the containers.
-        let tracker = PersistentHistoryTracker(
-            container: target1Container,
-            currentAuthor: Authors.viewContext1)
+        let tracker = target1Stack.historyTracker!
         
         // Start tracking
         await tracker.startMonitoring()
@@ -187,27 +164,23 @@ class PersistentHistoryTest: PersistentStoreTest {
         
         // Create two containers at same URL
         // create 2 containers at same location
-        let target1Container = try Self.makeContainerWithPersistentTracking()
-        let target2Container = try Self.makeContainerWithPersistentTracking()
-        let vc1 = target1Container.viewContext
-        let vc2 = target2Container.viewContext
+        let target1Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext1)
+        let target2Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext2)
+        let vc1 = target1Stack.viewContext
+        let vc2 = target2Stack.viewContext
         
-        // set view context names of each container to VC1 and VC2
-        vc1.name = Authors.viewContext1.name
-        vc2.name = Authors.viewContext2.name
-
         // ViewContexts.retainsRegisteredObjects = true
         vc1.retainsRegisteredObjects = true
         vc2.retainsRegisteredObjects = true
         
         // create two trackers
-        let tracker1 = PersistentHistoryTracker(container: target1Container, currentAuthor: Authors.viewContext1)
-        let tracker2 = PersistentHistoryTracker(container: target2Container, currentAuthor: Authors.viewContext2)
+        let tracker1 = target1Stack.historyTracker!
+        let tracker2 = target2Stack.historyTracker!
         await tracker1.startMonitoring()
         await tracker2.startMonitoring()
         
         // Insert objects into background context
-        let bgContext = target2Container.newBackgroundContext()
+        let bgContext = target2Stack.backgroundContext(author: .backgroundContext)
         bgContext.name = Authors.backgroundContext.name
         
         let objID1 = try bgContext.performAndWait {
