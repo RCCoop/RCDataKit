@@ -78,20 +78,14 @@ extension SampleData.Student: Persistable {
 
     static func generateImporterData(objects: [SampleData.Student], context: NSManagedObjectContext) throws -> ImporterData {
         // Get existing students to update
-        let studentsPredicate = NSPredicate(
-            format: "%K IN %@",
-            #keyPath(Student.id),
-            objects.map(\.id))
+        let studentsPredicate = (\Student.id).in(objects.map(\.id))
         let studentsFetch = NSFetchRequest<Student>(entityName: Student.entity().name!)
         studentsFetch.predicate = studentsPredicate
         let students = try context.fetch(studentsFetch)
         let keyedStudents = students.reduce(into: [:]) { $0[$1.id] = $1 }
         
         // Get existing schools for setting school relation
-        let schoolsPredicate = NSPredicate(
-            format: "%K IN %@",
-            #keyPath(School.id),
-            objects.map(\.school))
+        let schoolsPredicate = (\School.id).in(objects.map(\.school))
         let schoolsFetch = NSFetchRequest<School>(entityName: School.entity().name!)
         schoolsFetch.predicate = schoolsPredicate
         let schools = try context.fetch(schoolsFetch)

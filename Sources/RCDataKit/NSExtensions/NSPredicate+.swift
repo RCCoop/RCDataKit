@@ -5,6 +5,8 @@
 import CoreData
 import Foundation
 
+// MARK: - Compounding Operators
+
 public func || (lhs: NSPredicate, rhs: NSPredicate) -> NSPredicate {
     NSCompoundPredicate(orPredicateWithSubpredicates: [lhs, rhs])
 }
@@ -17,12 +19,16 @@ public prefix func ! (predicate: NSPredicate) -> NSPredicate {
     NSCompoundPredicate(notPredicateWithSubpredicate: predicate)
 }
 
+// MARK: - NSManagedObjectID Predicate
+
 extension NSPredicate {
     /// Initializes a predicate matching all objects with the given `NSManagedObjectID`s.
     convenience init(managedObjectIds: [NSManagedObjectID]) {
         self.init(format: "self in %@", managedObjectIds)
     }
 }
+
+// MARK: - Equatable & Comparable
 
 // General Equal
 public func == <T: NSManagedObject, V: Equatable>(
@@ -117,6 +123,26 @@ public func <= <T: NSManagedObject, V: Comparable>(
     )
 }
 
+extension KeyPath where Root: NSManagedObject, Value: Comparable {
+    // Numeric Between
+    public func between(
+        _ range: ClosedRange<Value>
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: [range.lowerBound, range.upperBound]
+            ),
+            modifier: .direct,
+            type: .between
+        )
+    }
+}
+
+// MARK: - Strings
+
 extension KeyPath where Root: NSManagedObject, Value == String {
     
     // String Not Equal
@@ -154,83 +180,11 @@ extension KeyPath where Root: NSManagedObject, Value == String {
             options: options
         )
     }
-
-    // String Greater
-    public func greaterThan<Y: StringProtocol>(
-        _ rhs: Y,
-        options: NSComparisonPredicate.Options = []
-    ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: rhs
-            ),
-            modifier: .direct,
-            type: .greaterThan,
-            options: options
-        )
-    }
-
-    // String GreaterEqual
-    public func greaterThanOrEqual<Y: StringProtocol>(
-        to rhs: Y,
-        options: NSComparisonPredicate.Options = []
-    ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: rhs
-            ),
-            modifier: .direct,
-            type: .greaterThanOrEqualTo,
-            options: options
-        )
-    }
-
-    // String Less
-    public func lessThan<Y: StringProtocol>(
-        _ rhs: Y,
-        options: NSComparisonPredicate.Options = []
-    ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: rhs
-            ),
-            modifier: .direct,
-            type: .lessThan,
-            options: options
-        )
-    }
-
-    // String LessEqual
-    public func lessThanOrEqual<Y: StringProtocol>(
-        to rhs: Y,
-        options: NSComparisonPredicate.Options = []
-    ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: rhs
-            ),
-            modifier: .direct,
-            type: .lessThanOrEqualTo,
-            options: options
-        )
-    }
     
     // String In
     public func `in`<C: Collection>(
         _ collection: C,
-        options: NSComparisonPredicate.Options = []
+        options: NSComparisonPredicate.Options
     ) -> NSPredicate
         where C.Element: StringProtocol
     {
@@ -247,9 +201,9 @@ extension KeyPath where Root: NSManagedObject, Value == String {
         )
     }
     
-    // String Between
-    public func between<Y: StringProtocol>(
-        _ lhs: Y, and rhs: Y,
+    // String LIKE
+    public func like<Y: StringProtocol>(
+        _ comparator: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
         NSComparisonPredicate(
@@ -257,14 +211,88 @@ extension KeyPath where Root: NSManagedObject, Value == String {
                 forKeyPath: stringRepresentation
             ),
             rightExpression: NSExpression(
-                forConstantValue: [lhs, rhs]
+                forConstantValue: comparator
             ),
             modifier: .direct,
-            type: .between,
+            type: .like,
+            options: options
+        )
+    }
+    
+    // String CONTAINS
+    public func contains<Y: StringProtocol>(
+        _ substring: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: substring
+            ),
+            modifier: .direct,
+            type: .contains,
+            options: options
+        )
+    }
+    
+    // String BEGINSWITH
+    public func beginsWith<Y: StringProtocol>(
+        _ prefix: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: prefix
+            ),
+            modifier: .direct,
+            type: .beginsWith,
+            options: options
+        )
+    }
+    
+    // Stirng ENDSWITH
+    public func endsWith<Y: StringProtocol>(
+        _ suffix: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: suffix
+            ),
+            modifier: .direct,
+            type: .endsWith,
+            options: options
+        )
+    }
+    
+    // String MATCHES
+    public func matches<Y: StringProtocol>(
+        _ regex: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: regex
+            ),
+            modifier: .direct,
+            type: .matches,
             options: options
         )
     }
 }
+
+// MARK: IN
 
 extension KeyPath where Root: NSManagedObject, Value: Equatable {
     // General In
@@ -282,43 +310,6 @@ extension KeyPath where Root: NSManagedObject, Value: Equatable {
             ),
             modifier: .direct,
             type: .in
-        )
-    }
-}
-
-extension KeyPath where Root: NSManagedObject, Value: Comparable & Numeric {
-    // Numeric In
-    public func `in`<C: Collection>(
-        _ collection: C
-    ) -> NSPredicate
-        where C.Element: Equatable & Numeric
-    {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: collection
-            ),
-            modifier: .direct,
-            type: .in
-        )
-    }
-
-    // Numeric Between
-    public func between<Y: Comparable & Numeric>(
-        _ lhs: Y,
-        and rhs: Y
-    ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: [lhs, rhs]
-            ),
-            modifier: .direct,
-            type: .between
         )
     }
 }

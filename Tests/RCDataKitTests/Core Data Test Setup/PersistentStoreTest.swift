@@ -116,7 +116,7 @@ class PersistentStoreTest: XCTestCase {
     }
     
     var southParkPredicate: NSPredicate {
-        (\Student.id).between(3, and: 6)
+        (\Student.id).between(3...6)
     }
     
     var sortById: [NSSortDescriptor] {
