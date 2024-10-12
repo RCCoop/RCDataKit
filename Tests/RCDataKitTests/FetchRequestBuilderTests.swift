@@ -23,7 +23,7 @@ final class FetchRequestBuilderTests: PersistentStoreTest {
     
     func testAddingPredicate() throws {
         let simpsonsRequest = Student.studentRequest()
-            .predicated(simpsonsPredicate)
+            .where(simpsonsPredicate)
         
         let simpsonsKids = try viewContext.fetch(simpsonsRequest)
         XCTAssertEqual(simpsonsKids.map(\.lastName), Array(repeating: "Simpson", count: 3))
@@ -39,7 +39,7 @@ final class FetchRequestBuilderTests: PersistentStoreTest {
     
     func testSortingAndPredicate() throws {
         let simpsonsRequest = Student.studentRequest()
-            .predicated(simpsonsPredicate)
+            .where(simpsonsPredicate)
             .sorted(sortById)
         
         let simpsonsKids = try viewContext.fetch(simpsonsRequest)

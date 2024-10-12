@@ -311,7 +311,7 @@ A little syntactic sugar for using chaining functions to build your `NSFetchRequ
 ```swift
 let fetchRequest = NSFetchRequest<Person>(entityName: "Person")
     .sorted(sortDescriptors)
-    .predicated(somePredicate)
+    .where(somePredicate)
 ```
 
 And for building `NSSortDescriptor`:

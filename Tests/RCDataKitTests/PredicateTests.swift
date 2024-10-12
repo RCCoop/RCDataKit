@@ -103,7 +103,7 @@ final class PredicateTests: PersistentStoreTest {
             .filter { $0.lastName == "Simpson" }
             .map { $0.objectID }
         let idsRequest = Student.studentRequest()
-            .predicated(NSPredicate(managedObjectIds: simpsonIDs))
+            .where(NSPredicate(managedObjectIds: simpsonIDs))
         let simpsonsKids = try viewContext.fetch(idsRequest)
         
         XCTAssertEqual(simpsonsKids.count, 3)

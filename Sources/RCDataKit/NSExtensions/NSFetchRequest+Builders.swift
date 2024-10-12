@@ -9,7 +9,7 @@ public extension NSFetchRequest {
     /// Convenience method for chaining creation of `NSFetchRequest` by adding a `NSPredicate`.
     /// - Parameter predicate: The predicate to add to the FetchRequest
     /// - Returns: The `NSFetchRequest` that this function was called on.
-    @objc func predicated(_ predicate: NSPredicate) -> Self {
+    @objc func `where`(_ predicate: NSPredicate) -> Self {
         self.predicate = predicate
         return self
     }
