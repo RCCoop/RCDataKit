@@ -56,7 +56,7 @@ extension PersistentStoreVersion {
     }
     
     var modelVersion: NSManagedObjectModel {
-        NSManagedObjectModel(
+        NSManagedObjectModel.create(
             bundle: Self.bundle,
             modelName: Self.modelName,
             versionName: versionName)!

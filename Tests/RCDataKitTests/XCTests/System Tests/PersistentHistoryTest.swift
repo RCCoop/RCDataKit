@@ -6,35 +6,44 @@ import CoreData
 import XCTest
 @testable import RCDataKit
 
-class PersistentHistoryTest: PersistentStoreTest {
+class PersistentHistoryTest: XCTestCase {
     
     var timestampManager = DefaultTimestampManager()
     
+    var stack1: SingleStoreStack<ModelAuthors>!
+    var stack2: SingleStoreStack<ModelAuthors>!
+    
     // MARK: - Setup
     
-    enum Authors: String, TransactionAuthor {
-        case viewContext1, viewContext2, backgroundContext
+    override func setUp() async throws {
+        try await super.setUp()
+        
+        stack1 = try TestingStacks.persistentTrackingStack(mainAuthor: .viewContext1)
+        stack2 = try TestingStacks.persistentTrackingStack(mainAuthor: .viewContext2)
     }
-
+    
     override func tearDown() async throws {
         try await super.tearDown()
         
-        Authors.allCases.forEach { timestampManager.setLatestHistoryTransactionDate(author: $0, date: nil) }
+        ModelAuthors.allCases.forEach { timestampManager.setLatestHistoryTransactionDate(author: $0, date: nil) }
+        
+        stack2 = nil
+        try stack1.container.destroyStore()
+        stack1 = nil
+        
+        await sleep(seconds: 0.25)
     }
     
     // MARK: - Tests
     
     func testFetcher() async throws {
-        // create 2 containers at same location
-        let target1Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext1)
-        let target2Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext2)
-        let vc1 = target1Stack.viewContext
-        let vc2 = target2Stack.viewContext
+        let vc1 = stack1.viewContext
+        let vc2 = stack2.viewContext
                 
         // Get Fetcher
         let startDate = Date()
-        let bgContext = target1Stack.backgroundContext(author: .backgroundContext)
-        let fetcher = await target1Stack.historyTracker!.fetcher
+        let bgContext = stack1.backgroundContext(author: .backgroundContext)
+        let fetcher = await stack1.historyTracker!.fetcher
         
         // create a thing in each view context
         try vc1.performAndWait {
@@ -63,14 +72,11 @@ class PersistentHistoryTest: PersistentStoreTest {
     }
     
     func testCleaner() async throws {
-        // create 2 containers at same location
-        let target1Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext1)
-        let target2Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext2)
-        let vc1 = target1Stack.viewContext
-        let vc2 = target2Stack.viewContext
+        let vc1 = stack1.viewContext
+        let vc2 = stack2.viewContext
         
         // Prepare to create Fetcher and Cleaner
-        let bgContext = target1Stack.backgroundContext(author: .backgroundContext)
+        let bgContext = stack1.backgroundContext(author: .backgroundContext)
                 
         // Perform Actions
         
@@ -90,13 +96,13 @@ class PersistentHistoryTest: PersistentStoreTest {
         }
         
         // Create Cleaner & Fetcher for testing
-        let fetcher = await target1Stack.historyTracker!.fetcher
-        let cleaner = await target1Stack.historyTracker!.cleaner
+        let fetcher = await stack1.historyTracker!.fetcher
+        let cleaner = await stack1.historyTracker!.cleaner
         
         // Check number of transactions before cleaning == 2
         let transactions = try fetcher.fetchTransactions(workerContext: bgContext, minimumDate: .distantPast)
         XCTAssertEqual(transactions.count, 2)
-        XCTAssertEqual(Set([Authors.viewContext2.name]), Set(transactions.map(\.author)))
+        XCTAssertEqual(Set([ModelAuthors.viewContext2.name]), Set(transactions.map(\.author)))
         
         // Perform cleaning
         try cleaner.cleanTransactions(workerContext: bgContext, cleanBeforeDate: Date())
@@ -107,18 +113,14 @@ class PersistentHistoryTest: PersistentStoreTest {
     }
     
     func testPersistentHistoryTracker() async throws {
-        // Create two containers at same URL
-        // create 2 containers at same location
-        let target1Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext1)
-        let target2Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext2)
-        let vc1 = target1Stack.viewContext
-        let vc2 = target2Stack.viewContext
+        let vc1 = stack1.viewContext
+        let vc2 = stack2.viewContext
         
         // ViewContext1.retainsRegisteredObjects = true
         vc1.retainsRegisteredObjects = true
 
         // Create PersistentHistoryTracker for one of the containers.
-        let tracker = target1Stack.historyTracker!
+        let tracker = stack1.historyTracker!
         
         // Start tracking
         await tracker.startMonitoring()
@@ -148,7 +150,7 @@ class PersistentHistoryTest: PersistentStoreTest {
         }
         
         // check userDefaults for latest time stamp for VC1 √
-        let savedTimeStamps = Authors.allCases.reduce(into: [:]) {
+        let savedTimeStamps = ModelAuthors.allCases.reduce(into: [:]) {
             $0[$1] = timestampManager.latestHistoryTransactionDate(author: $1)
         }
         XCTAssertEqual(Array(savedTimeStamps.keys), [.viewContext1])
@@ -162,26 +164,22 @@ class PersistentHistoryTest: PersistentStoreTest {
         // and insert object into backgroundContext, then check for ObjectIDs
         // in both view contexts.
         
-        // Create two containers at same URL
-        // create 2 containers at same location
-        let target1Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext1)
-        let target2Stack = try Self.makeStackWithPersistentTracking(mainAuthor: Authors.viewContext2)
-        let vc1 = target1Stack.viewContext
-        let vc2 = target2Stack.viewContext
+        let vc1 = stack1.viewContext
+        let vc2 = stack2.viewContext
         
         // ViewContexts.retainsRegisteredObjects = true
         vc1.retainsRegisteredObjects = true
         vc2.retainsRegisteredObjects = true
         
         // create two trackers
-        let tracker1 = target1Stack.historyTracker!
-        let tracker2 = target2Stack.historyTracker!
+        let tracker1 = stack1.historyTracker!
+        let tracker2 = stack2.historyTracker!
         await tracker1.startMonitoring()
         await tracker2.startMonitoring()
         
         // Insert objects into background context
-        let bgContext = target2Stack.backgroundContext(author: .backgroundContext)
-        bgContext.name = Authors.backgroundContext.name
+        let bgContext = stack2.backgroundContext(author: .backgroundContext)
+        bgContext.name = ModelAuthors.backgroundContext.name
         
         let objID1 = try bgContext.performAndWait {
             let student = Student(context: bgContext, id: 0, firstName: "A", lastName: "A")
@@ -217,7 +215,7 @@ class PersistentHistoryTest: PersistentStoreTest {
         }
         
         // check userDefaults for latest time stamp for VC1 √
-        let savedTimeStamps = Authors.allCases.reduce(into: [:]) {
+        let savedTimeStamps = ModelAuthors.allCases.reduce(into: [:]) {
             $0[$1] = timestampManager.latestHistoryTransactionDate(author: $1)
         }
         XCTAssertEqual(Set(savedTimeStamps.keys), [.viewContext1, .viewContext2])

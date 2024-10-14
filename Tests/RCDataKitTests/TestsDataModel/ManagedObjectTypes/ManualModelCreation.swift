@@ -1,71 +1,14 @@
 //
-//  ManagedObjectClasses.swift
+//  ManualModelCreation.swift
 //
 
 import CoreData
-import Foundation
-import RCDataKit
 
-/// Abstract Entity to encompass Student and Teacher
-@objc(Person)
-class Person: NSManagedObject, Updatable {
-    @NSManaged var firstName: String
-    @NSManaged var lastName: String
-    @NSManaged var id: Int
-    
-    var fullName: String {
-        firstName + " " + lastName
-    }
-    
-    convenience init(context: NSManagedObjectContext, id: Int, firstName: String, lastName: String) {
-        self.init(context: context)
-        self.id = id
-        self.firstName = firstName
-        self.lastName = lastName
-    }
-}
+/// Not currently used, and not kept updated with TestModel.mom
+/// Builds NSManagedObjectModel manually without a mom file.
+/// Kept in here for reference purposes.
 
-@objc(Student)
-class Student: Person {
-    @NSManaged var school: School?
-    
-    static func studentRequest() -> NSFetchRequest<Student> {
-        NSFetchRequest<Student>(entityName: "Student")
-    }
-}
-
-@objc(Teacher)
-class Teacher: Person {
-    @NSManaged var schools: Set<School>
-    
-    static func teacherRequest() -> NSFetchRequest<Teacher> {
-        NSFetchRequest<Teacher>(entityName: "Teacher")
-    }
-}
-
-@objc(School)
-class School: NSManagedObject, Updatable {
-    @NSManaged var name: String
-    @NSManaged var id: String
-    @NSManaged var teacher: Teacher?
-    @NSManaged var students: Set<Student>
-    
-    static func schoolRequest() -> NSFetchRequest<School> {
-        NSFetchRequest<School>(entityName: "School")
-    }
-    
-    convenience init(context: NSManagedObjectContext, id: String, name: String) {
-        self.init(context: context)
-        self.id = id
-        self.name = name
-    }
-}
-
-// MARK: - The Model
-
-/// Not currently used. Builds NSManagedObjectModel manually without a mom file.
-/*
-func buildCoreDataModel() -> NSManagedObjectModel {
+private func buildCoreDataModel() -> NSManagedObjectModel {
     // Student
     let studentEntity = NSEntityDescription()
     studentEntity.name = "Student"
@@ -142,4 +85,3 @@ func buildCoreDataModel() -> NSManagedObjectModel {
     
     return model
 }
-*/

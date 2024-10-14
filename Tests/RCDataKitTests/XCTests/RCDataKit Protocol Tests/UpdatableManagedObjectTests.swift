@@ -2,9 +2,10 @@
 //  UpdatableManagedObjectTests.swift
 //  
 
+import RCDataKit
 import XCTest
 
-final class UpdatableManagedObjectTests: PersistentStoreTest {
+final class UpdatableManagedObjectTests: XCTestCase {
     
     var container: NSPersistentContainer!
     
@@ -14,7 +15,13 @@ final class UpdatableManagedObjectTests: PersistentStoreTest {
     
     override func setUp() async throws {
         try await super.setUp()
-        container = try Self.makeContainer()
+        container = try TestingStacks.inMemoryContainer()
+    }
+    
+    override func tearDown() async throws {
+        try await super.tearDown()
+        
+        self.container = nil
     }
 
     func testBasicUpdates() throws {

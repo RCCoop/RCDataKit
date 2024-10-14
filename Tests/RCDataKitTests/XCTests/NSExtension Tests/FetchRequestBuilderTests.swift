@@ -6,7 +6,7 @@ import CoreData
 import XCTest
 @testable import RCDataKit
 
-final class FetchRequestBuilderTests: PersistentStoreTest {
+final class FetchRequestBuilderTests: XCTestCase {
     
     var container: NSPersistentContainer!
     
@@ -16,31 +16,38 @@ final class FetchRequestBuilderTests: PersistentStoreTest {
     
     override func setUp() async throws {
         try await super.setUp()
-        container = try Self.makeContainer()
+        container = try TestingStacks.inMemoryContainer()
+        let sampleStudents = try SchoolsData().students
+        _ = try viewContext.importPersistableObjects(sampleStudents)
+        try viewContext.save()
+    }
+    
+    override func tearDown() async throws {
+        try await super.tearDown()
         
-        try addStudentsFromSampleData(context: container.viewContext)
+        self.container = nil
     }
     
     func testAddingPredicate() throws {
-        let simpsonsRequest = Student.studentRequest()
-            .where(simpsonsPredicate)
+        let simpsonsRequest = Student.fetchRequest()
+            .where(\Student.lastName == "Simpson")
         
         let simpsonsKids = try viewContext.fetch(simpsonsRequest)
         XCTAssertEqual(simpsonsKids.map(\.lastName), Array(repeating: "Simpson", count: 3))
     }
     
     func testAddingSortDescriptors() throws {
-        let kidsRequest = Student.studentRequest()
-            .sorted([NSSortDescriptor(keyPath: \Student.id, ascending: true)])
+        let kidsRequest = Student.fetchRequest()
+            .sorted([.ascending(\Student.id)])
         
         let allKids = try viewContext.fetch(kidsRequest)
         XCTAssertEqual(allKids.map(\.id), Array(0...9))
     }
     
     func testSortingAndPredicate() throws {
-        let simpsonsRequest = Student.studentRequest()
-            .where(simpsonsPredicate)
-            .sorted(sortById)
+        let simpsonsRequest = Student.fetchRequest()
+            .where(\Student.lastName == "Simpson")
+            .sorted([.ascending(\Student.id)])
         
         let simpsonsKids = try viewContext.fetch(simpsonsRequest)
         XCTAssertEqual(simpsonsKids.map(\.firstName), ["Bart", "Lisa", "Maggie"])
@@ -48,7 +55,7 @@ final class FetchRequestBuilderTests: PersistentStoreTest {
     
     func testFetchByID() throws {
         let idsRequest = NSFetchRequest(entityIds: Student.self)
-            .sorted(sortById)
+            .sorted([.ascending(\Student.id)])
         
         let ids = try viewContext.fetch(idsRequest)
         let bartFromID = try XCTUnwrap(viewContext.object(with: ids[0]) as? Student)

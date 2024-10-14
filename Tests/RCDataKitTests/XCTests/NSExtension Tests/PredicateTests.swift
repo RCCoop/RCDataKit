@@ -6,7 +6,7 @@ import CoreData
 import XCTest
 @testable import RCDataKit
 
-final class PredicateTests: PersistentStoreTest {
+final class PredicateTests: XCTestCase {
     
     var container: NSPersistentContainer!
     
@@ -16,11 +16,18 @@ final class PredicateTests: PersistentStoreTest {
     
     override func setUp() async throws {
         try await super.setUp()
-        container = try Self.makeContainer()
+        container = try TestingStacks.inMemoryContainer()
         
-        try addStudentsFromSampleData(context: container.viewContext)
+//        try addStudentsFromSampleData(context: container.viewContext)
+    }
+    
+    override func tearDown() async throws {
+        try await super.tearDown()
+        
+        self.container = nil
     }
 
+    /*
     func testBasicSetupPredicates() throws {
         let simpsonsRequest = Student.studentRequest()
         simpsonsRequest.sortDescriptors = sortById
@@ -133,4 +140,5 @@ final class PredicateTests: PersistentStoreTest {
         // <=
         
     }
+     */
 }

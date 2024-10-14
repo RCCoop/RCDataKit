@@ -6,7 +6,7 @@ import CoreData
 @testable import RCDataKit
 import XCTest
 
-final class PersistableTests: PersistentStoreTest {
+final class PersistableTests: XCTestCase {
 
     var container: NSPersistentContainer!
     
@@ -16,20 +16,28 @@ final class PersistableTests: PersistentStoreTest {
     
     override func setUp() async throws {
         try await super.setUp()
-        container = try Self.makeContainer()
+        container = try TestingStacks.inMemoryContainer()
         
-        try addStudentsFromSampleData(context: container.viewContext)
+        let students = try SchoolsData().students
+        _ = try viewContext.importPersistableObjects(students)
+        try viewContext.save()
+    }
+    
+    override func tearDown() async throws {
+        try await super.tearDown()
+        
+        self.container = nil
     }
 
     func testImportOutputTypes() throws {
-        let sampleData = try SampleData.build()
+        let teachers = try SchoolsData().teachers
         
-        let teacherResult: [Int : PersistenceResult] = try viewContext.importPersistableObjects(sampleData.teachers)
-        XCTAssertEqual(teacherResult.keys.sorted(), sampleData.teachers.map(\.id).sorted())
+        let teacherResult: [Int : PersistenceResult] = try viewContext.importPersistableObjects(teachers)
+        XCTAssertEqual(teacherResult.keys.sorted(), teachers.map(\.id).sorted())
     }
     
     func testImportPersistableTypes() throws {
-        let sampleData = try SampleData.build()
+        let sampleData = try SchoolsData()
         
         // Import persistable types in order - teachers, schools, students
         let teacherResult: [PersistenceResult] = try viewContext.importPersistableObjects(sampleData.teachers)
