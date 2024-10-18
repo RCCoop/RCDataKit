@@ -16,10 +16,6 @@ struct TeacherImport: Decodable, Identifiable {
 }
 
 extension TeacherImport: Persistable {
-    static func generateImporterData(objects: [TeacherImport], context: NSManagedObjectContext) throws -> () {
-        // nothing
-    }
-    
     func importIntoContext(_ context: NSManagedObjectContext, importerData: inout Void) -> PersistenceResult {
         let newTeach = Teacher(context: context, id: id, firstName: firstName, lastName: lastName)
         return .insert(newTeach.objectID)

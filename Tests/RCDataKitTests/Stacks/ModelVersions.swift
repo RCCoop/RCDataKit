@@ -9,11 +9,9 @@ import CoreData
 import RCDataKit
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-enum ModelVersions: String, PersistentStoreVersion {
-    static var bundle: Bundle { .module }
-    
-    static var modelName: String { "TestModel" }
-            
+enum ModelVersions: String, ModelVersionKey {
+    typealias ModelDefinition = ModelKey
+        
     case v1 = "Model"
     case v2 = "Model2"
     case v3 = "Model3"

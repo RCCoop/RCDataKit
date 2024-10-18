@@ -23,25 +23,19 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     /// Private initializer that underpins the public initializers.
     ///
     /// - Parameters:
-    ///   - bundle:         The bundle in which to find the ManagedObjectModel file.
     ///   - modelName:      The title of the ManagedObjectModel file.
-    ///   - modelVersion:   An optional title of the version to use of the ManagedObjectModel. If no version
-    ///                     is given, the version specified by the model file is used.
+    ///   - model:          <#description#>
     ///   - mainAuthor:     The `Author` case to use in the stack's viewContext.
     ///   - configurations: An array of actions taken after the container's descriptions are created
     ///                     and before the stores are loaded.
     private init(
-        bundle: Bundle,
         modelName: String,
-        modelVersion: String?,
+        model: NSManagedObjectModel,
         mainAuthor: Authors,
         configurations: [SingleStoreStackConfiguration]
     ) throws {
         // Create NSPersistentContainer
-        self.container = NSPersistentContainer(
-            bundle: bundle,
-            modelName: modelName,
-            versionName: modelVersion)
+        self.container = NSPersistentContainer(name: modelName, managedObjectModel: model)
         
         // Set main viewContext name
         self.viewContextID = mainAuthor
@@ -65,9 +59,8 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     /// to enable Persistent History Tracking.
     ///
     /// - Parameters:
-    ///   - bundle:                   The bundle in which to find the ManagedObjectModel file.
+    ///   - modelDefinition:          <#description#>
     ///   - storeURL:                 If set, the exact location for the PersistentStore.
-    ///   - modelName:                The title of the ManagedObjectModel file.
     ///   - modelVersion:             The title of the version to use of the ManagedObjectModel. If no version
     ///                               is given, the version specified by the model file is used.
     ///   - mainAuthor:               The `Author` case to use in the stack's viewContext.
@@ -75,11 +68,9 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     ///                               that describe how to set up Persistent History Tracking. If none
     ///                               is given, the stack's viewContext automatically merges changes
     ///                               from the store, but without custom history tracking.
-    public init(
-        bundle: Bundle = .main,
+    public init<ModelDefinition: ManagedModelFile>(
+        _ modelDefinition: ModelDefinition.Type,
         storeURL: URL? = nil,
-        modelName: String,
-        modelVersion: String? = nil,
         mainAuthor: Authors,
         persistentHistoryOptions: PersistentHistoryTrackingOptions? = nil
     ) throws {
@@ -97,9 +88,8 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
         }
         
         try self.init(
-            bundle: bundle,
-            modelName: modelName,
-            modelVersion: modelVersion,
+            modelName: modelDefinition.modelName,
+            model: modelDefinition.model,
             mainAuthor: mainAuthor,
             configurations: [persistentHistoryConfiguration, urlConfiguration])
         
@@ -121,7 +111,7 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     ///                               is given, the stack's viewContext automatically merges changes
     ///                               from the store, but without custom history tracking.
     @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-    public init<V: PersistentStoreVersion>(
+    public init<V: ModelVersionKey>(
         storeURL: URL? = nil,
         versionKey: V.Type,
         currentVersion: V? = nil,
@@ -146,9 +136,8 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
         }
         
         try self.init(
-            bundle: V.bundle,
-            modelName: V.modelName,
-            modelVersion: currentVersion?.versionName,
+            modelName: V.ModelDefinition.modelName,
+            model: V.ModelDefinition.model,
             mainAuthor: mainAuthor,
             configurations: [persistentHistoryConfiguration, urlConfiguration, versioningConfiguration])
     }

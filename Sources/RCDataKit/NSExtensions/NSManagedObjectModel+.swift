@@ -7,11 +7,12 @@
 
 import CoreData
 
-fileprivate enum ModelCache {
-    nonisolated(unsafe) static var shared: [URL : NSManagedObjectModel] = [:]
-}
-
 extension NSManagedObjectModel {
+    /// <#Description#>
+    /// - Parameters:
+    ///   - bundle: <#bundle description#>
+    ///   - modelName: <#modelName description#>
+    /// - Returns: <#description#>
     public static func modelURL(
         bundle: Bundle = .main,
         modelName: String
@@ -28,9 +29,15 @@ extension NSManagedObjectModel {
             .appendingPathComponent(versionName + ".mom", conformingTo: .managedObjectModel)
     }
     
-    public static func create(
-        bundle: Bundle = .main,
-        modelName: String,
+    /// <#Description#>
+    /// - Parameters:
+    ///   - modelName: <#modelName description#>
+    ///   - bundle: <#bundle description#>
+    ///   - versionName: <#versionName description#>
+    /// - Returns: <#description#>
+    public static func named(
+        _ modelName: String,
+        in bundle: Bundle = .main,
         versionName: String? = nil
     ) -> NSManagedObjectModel? {
         let url: URL
@@ -40,12 +47,6 @@ extension NSManagedObjectModel {
             url = Self.modelURL(bundle: bundle, modelName: modelName)
         }
         
-        if let cached = ModelCache.shared[url] {
-            return cached
-        } else {
-            let new = NSManagedObjectModel(contentsOf: url)
-            ModelCache.shared[url] = new
-            return new
-        }
+        return NSManagedObjectModel(contentsOf: url)
     }
 }

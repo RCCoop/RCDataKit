@@ -18,8 +18,16 @@ class PersistentHistoryTest: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         
-        stack1 = try TestingStacks.persistentTrackingStack(mainAuthor: .viewContext1)
-        stack2 = try TestingStacks.persistentTrackingStack(mainAuthor: .viewContext2)
+        let stackName = "PersistentHistoryTest"
+        stack1 = try TestingStacks.temporaryStack(
+            uniqueName: stackName,
+            mainAuthor: .viewContext1,
+            withPersistentHistoryTracking: true)
+        stack2 = try TestingStacks.temporaryStack(
+            uniqueName: stackName,
+            mainAuthor: .viewContext2,
+            removeOldStore: false,
+            withPersistentHistoryTracking: true)
     }
     
     override func tearDown() async throws {
@@ -28,7 +36,6 @@ class PersistentHistoryTest: XCTestCase {
         ModelAuthors.allCases.forEach { timestampManager.setLatestHistoryTransactionDate(author: $0, date: nil) }
         
         stack2 = nil
-        try stack1.container.destroyStore()
         stack1 = nil
         
         await sleep(seconds: 0.25)

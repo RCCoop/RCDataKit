@@ -20,7 +20,7 @@ extension NSPersistentContainer {
         modelName: String,
         versionName: String?
     ) {
-        if let model = NSManagedObjectModel.create(bundle: bundle, modelName: modelName, versionName: versionName) {
+        if let model = NSManagedObjectModel.named(modelName, in: bundle, versionName: versionName) {
             self.init(name: modelName, managedObjectModel: model)
         } else {
             self.init(name: modelName)

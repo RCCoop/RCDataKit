@@ -20,19 +20,30 @@ public struct PreviewStack: DataStack {
     
     public let container: NSPersistentContainer
     
-    public init(
-        bundle: Bundle = .main,
-        modelName: String
+    /// <#Description#>
+    /// - Parameters:
+    ///   - modelDefinition: <#modelDefinition description#>
+    ///   - name: <#name description#>
+    public init<ModelDefinition: ManagedModelDefinition>(
+        _ modelDefinition: ModelDefinition.Type,
+        name: String
     ) {
-        self.container = NSPersistentContainer(bundle: bundle, modelName: modelName, versionName: nil)
+        self.container = NSPersistentContainer(name: name, managedObjectModel: modelDefinition.model)
         
         container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
-//        container.persistentStoreDescriptions.first!.type = NSInMemoryStoreType
         
         do {
             try container.loadStores()
         } catch {
             fatalError("PersistentStore setup error \(error.localizedDescription)")
         }
+    }
+    
+    /// <#Description#>
+    /// - Parameter modelDefinition: <#modelDefinition description#>
+    public init<ModelDefinition: ManagedModelFile>(
+        _ modelDefinition: ModelDefinition.Type
+    ) {
+        self.init(ModelDefinition.self, name: modelDefinition.modelName)
     }
 }

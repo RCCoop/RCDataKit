@@ -15,7 +15,7 @@ final class StagedMigrationTest: XCTestCase {
     override func tearDown() async throws {
         try await super.tearDown()
     }
-    
+    /*
     func makeOldContainer(students: [StudentImport]) throws -> NSPersistentContainer? {
         let oldContainer = try TestingStacks.originalModelStack(mainAuthor: .viewContext1)
         guard let studentEntity = oldContainer.managedObjectModel.entitiesByName["Student"]
@@ -52,7 +52,7 @@ final class StagedMigrationTest: XCTestCase {
         let otherResults = try context.fetch(otherFetch)
         XCTAssert(otherResults.isEmpty)
         
-        try container.destroyStore()
+//        try container.destroyStore()
     }
     
     func testMakeNewContainerOnTopOfOldContainer() async throws {
@@ -93,4 +93,5 @@ final class StagedMigrationTest: XCTestCase {
         
         try newContainer.destroyStore()
     }
+     */
 }

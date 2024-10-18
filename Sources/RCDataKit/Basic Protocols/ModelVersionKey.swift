@@ -8,19 +8,25 @@ import UniformTypeIdentifiers
 /// A protocol used to streamline the process of building a `NSStagedMigrationManager` for your Core
 /// Data Persistent Model.
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-public protocol PersistentStoreVersion: CaseIterable {
-    /// The bundle where the ManagedObjectModel file resides
-    static var bundle: Bundle { get }
+public protocol ModelVersionKey: CaseIterable, Hashable {
+    associatedtype ModelDefinition: ManagedModelFile
     
-    /// The title of the ManagedObjectModel file
-    static var modelName: String { get }
+    /// The instance of `Self` that represents the current version of the data model.
+    ///
+    /// A default implementation returns the last case of `allCases`.
+    static var currentVersion: Self { get }
     
     /// The title of the model version represented by this instance.
     ///
     /// If the `PersistentStoreVersion` type is a `RawRepresentable` of type `String`, the
     /// default implementation of `versionName` takes the raw value of the instance as its version name.
     var versionName: String { get }
-
+    
+    /// The `NSManagedObjectModel` represented by this version of the model.
+    ///
+    /// <#description#>
+    var modelVersion: NSManagedObjectModel { get }
+    
     /// The `PersistentStoreVersion` type must provide an array of `NSMigrationStage` to be used
     /// to create a migration path across versions of the persistent model.
     ///
@@ -35,31 +41,28 @@ public protocol PersistentStoreVersion: CaseIterable {
 // MARK: - Default Implementations
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-public extension PersistentStoreVersion where Self: RawRepresentable, RawValue == String {
+public extension ModelVersionKey where Self: RawRepresentable, RawValue == String {
     var versionName: String {
         rawValue
     }
 }
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-extension PersistentStoreVersion {
-    static var modelURL: URL {
-        NSManagedObjectModel.modelURL(modelName: modelName)
+extension ModelVersionKey {
+    /// <#description#> default implementation...
+    public var modelVersion: NSManagedObjectModel {
+        if self == Self.currentVersion {
+            return ModelDefinition.model
+        } else {
+            return NSManagedObjectModel.named(
+                ModelDefinition.modelName,
+                in: ModelDefinition.bundle,
+                versionName: versionName)!
+        }
     }
-    
-    var versionURL: URL {
-        NSManagedObjectModel
-            .modelVersionURL(
-                bundle: Self.bundle,
-                modelName: Self.modelName,
-                versionName: versionName)
-    }
-    
-    var modelVersion: NSManagedObjectModel {
-        NSManagedObjectModel.create(
-            bundle: Self.bundle,
-            modelName: Self.modelName,
-            versionName: versionName)!
+
+    public static var currentVersion: Self {
+        Array(allCases).last!
     }
     
     var versionChecksum: String {
@@ -78,7 +81,7 @@ enum MigrationError: Error {
 }
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-extension PersistentStoreVersion {
+extension ModelVersionKey {
     public typealias MigrationHandler = (NSManagedObjectContext) throws -> Void
     
     /// Creates a `NSStagedMigrationManager` from the `PersistentStoreVersion`'s

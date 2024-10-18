@@ -69,9 +69,7 @@ public protocol Persistable {
     ) -> PersistenceResult
 }
 
-/*
-extension Persistable where ImporterData == Void {
-    // !!!: This should satisfy the protocol requirement, but in practice it fails to
+public extension Persistable where ImporterData == Void {
     static func generateImporterData(
         objects: [Self],
         context: NSManagedObjectContext
@@ -80,7 +78,6 @@ extension Persistable where ImporterData == Void {
         return ()
     }
 }
- */
 
 public enum PersistenceResult {
     case insert(NSManagedObjectID)
