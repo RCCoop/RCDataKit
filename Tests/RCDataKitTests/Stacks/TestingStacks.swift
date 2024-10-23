@@ -53,34 +53,43 @@ enum TestingStacks {
         
         return store
     }
+}
+
+// MARK: - Versioning Functions
+
+@available(macOS 14.0, iOS 17.0, *)
+extension TestingStacks {
     
-    // !!!: get rid of...
-    //
-    /*
-    @available(macOS 14.0, iOS 17.0, *)
-    static func originalModelStack(mainAuthor: ModelAuthors) throws -> NSPersistentContainer {
-        // !!!: Do this some other way
-        let stack = try SingleStoreStack(
-            storeURL: diskLocation,
-            versionKey: ModelVersions.self,
-            currentVersion: .v1,
-            mainAuthor: mainAuthor)
-        
-        return stack.container
+    fileprivate static var oldSqliteURL: URL {
+        Bundle.module.url(forResource: "OldStudentsStore", withExtension: "sqlite")!
     }
-     */
     
-    @available(macOS 14.0, iOS 17.0, *)
-    static func migratedContainer(
-        from existingStore: URL,
+    static func oldModelStack(
         uniqueName: String,
         mainAuthor: ModelAuthors = .viewContext1
     ) throws -> SingleStoreStack<ModelAuthors> {
-        let finalURL = try prepareStorageURL(name: uniqueName)
-        try FileManager.default.copyItem(at: existingStore, to: finalURL)
+        // Copy testing version of Sqlite store to temporary location
+        let url = try prepareStorageURL(name: uniqueName)
+        try FileManager.default.copyItem(at: oldSqliteURL, to: url)
         
         let stack = try SingleStoreStack(
-            storeURL: finalURL,
+            storeURL: url,
+            versionKey: ModelVersions.self,
+            currentVersion: .v1,
+            mainAuthor: mainAuthor)
+        return stack
+    }
+    
+    static func migratedContainer(
+        uniqueName: String,
+        mainAuthor: ModelAuthors = .viewContext1
+    ) throws -> SingleStoreStack<ModelAuthors> {
+        // Copy testing version of Sqlite store to temporary location:
+        let url = try prepareStorageURL(name: uniqueName)
+        try FileManager.default.copyItem(at: oldSqliteURL, to: url)
+        
+        let stack = try SingleStoreStack(
+            storeURL: url,
             versionKey: ModelVersions.self,
             mainAuthor: mainAuthor)
         return stack

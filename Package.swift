@@ -28,6 +28,9 @@ let package = Package(
         .testTarget(
             name: "RCDataKitTests",
             dependencies: ["RCDataKit"],
-            resources: [.copy("TestsDataModel/Sample Data/SchoolsData.json")]),
+            resources: [
+                .copy("TestsDataModel/Sample Data/SchoolsData.json"),
+                .copy("TestsDataModel/Sample Data/OldStudentsStore.sqlite"),
+            ]),
     ]
 )

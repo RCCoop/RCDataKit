@@ -15,83 +15,42 @@ final class StagedMigrationTest: XCTestCase {
     override func tearDown() async throws {
         try await super.tearDown()
     }
-    /*
-    func makeOldContainer(students: [StudentImport]) throws -> NSPersistentContainer? {
-        let oldContainer = try TestingStacks.originalModelStack(mainAuthor: .viewContext1)
-        guard let studentEntity = oldContainer.managedObjectModel.entitiesByName["Student"]
-        else { return nil }
+    
+    func testStackUsingOldModel() throws {
+        let name = "oldSchoolStore"
+        let stack = try TestingStacks.oldModelStack(uniqueName: name)
         
-        let context = oldContainer.viewContext
-
-        // Insert data!
+        let context = stack.viewContext
+        
+        // fetch all students -- should be 10
+        let studentFetch = NSFetchRequest<NSManagedObject>(entityName: "Student")
+        let students = try context.fetch(studentFetch)
+        XCTAssertEqual(students.count, 10)
+        
+        // check that data is not empty, and that isOldData == true
         for student in students {
-            let rawStudent = NSManagedObject(entity: studentEntity, insertInto: context)
-            let jsonData = try JSONEncoder().encode(student)
-            rawStudent.setValue(jsonData, forKey: "data")
+            let studentDataIsOld = student.value(forKey: "isOldData") as? Bool ?? false
+            XCTAssertTrue(studentDataIsOld)
+            
+            let studentData = try XCTUnwrap(student.value(forKey: "data") as? Data)
+            XCTAssertFalse(studentData.isEmpty)
+            let decodedStudent = try JSONDecoder().decode(StudentImport.self, from: studentData)
+            XCTAssertFalse(decodedStudent.firstName.isEmpty)
+            XCTAssertFalse(decodedStudent.lastName.isEmpty)
+            XCTAssertFalse(decodedStudent.school.isEmpty)
         }
-        try context.save()
-        
-        return oldContainer
     }
     
-    func testMakeOldContainer() throws {
-        let sampleStudents = try SchoolsData().students
-        guard let container = try makeOldContainer(students: sampleStudents)
-        else { fatalError() }
+    func testStackMigratedFromOldModel() throws {
+        let name = "migratedStore"
+        let stack = try TestingStacks.migratedContainer(uniqueName: name)
         
-        let context = container.viewContext
-                
-        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Student")
-        fetchRequest.predicate = NSPredicate(format: "isOldData == 1")
-        let fetchedResults = try context.fetch(fetchRequest)
-        XCTAssertFalse(fetchedResults.isEmpty)
-        XCTAssertEqual(fetchedResults.count, sampleStudents.count)
+        let context = stack.viewContext
         
-        let otherFetch = NSFetchRequest<NSManagedObject>(entityName: "Student")
-        otherFetch.predicate = NSPredicate(format: "isOldData == 0")
-        let otherResults = try context.fetch(otherFetch)
-        XCTAssert(otherResults.isEmpty)
-        
-//        try container.destroyStore()
+        // fetch all students -- should be 10 of them
+        let studentFetch = Student.fetchRequest()
+        studentFetch.returnsObjectsAsFaults = false
+        let students = try context.fetch(studentFetch)
+        XCTAssertEqual(students.count, 10)
     }
-    
-    func testMakeNewContainerOnTopOfOldContainer() async throws {
-        /*
-         NOTE: Running this test brings up the following error in the terminal:
-         
-         `CoreData: error: Attempting to retrieve an NSManagedObjectModel version
-         checksum while the model is still editable. This may result in an
-         unstable verison checksum. Add model to NSPersistentStoreCoordinator
-         and try again.`
-
-         The only reference I've found to this error message online is here:
-         https://forums.developer.apple.com/forums/thread/761735
-         
-         And the Apple Engineer in the thread says it's harmless. I've only run
-         into this error message while performing migrations in this test class,
-         not while performing them in an actual app, so I'm ignoring the error
-         for now.
-         */
-        
-        let sampleStudents = try SchoolsData().students
-        guard let _ = try makeOldContainer(students: sampleStudents)
-        else { fatalError() }
-                
-        let newContainer = try TestingStacks.stagedMigrationsStack(mainAuthor: .viewContext1)
-        let context = newContainer.viewContext
-        
-        let studentsRequest = Student.fetchRequest()
-        studentsRequest.returnsObjectsAsFaults = false
-        let existingStudents = try context.fetch(studentsRequest)
-        XCTAssertEqual(sampleStudents.count, existingStudents.count)
-        for oneStudent in existingStudents {
-            XCTAssertNotNil(oneStudent.value(forKey: "firstName"))
-            XCTAssertNotNil(oneStudent.value(forKey: "lastName"))
-            XCTAssertNil(oneStudent.school)
-            XCTAssertGreaterThanOrEqual(oneStudent.id, 0)
-        }
-        
-        try newContainer.destroyStore()
-    }
-     */
 }

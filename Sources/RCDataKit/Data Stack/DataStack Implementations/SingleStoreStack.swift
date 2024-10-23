@@ -130,14 +130,19 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
             }
         }
         let versioningConfiguration: SingleStoreStackConfiguration = { (desc, context) in
-            desc.shouldMigrateStoreAutomatically = true
-            desc.shouldInferMappingModelAutomatically = true
-            desc.setOption(versionKey.migrationManager(), forKey: NSPersistentStoreStagedMigrationManagerOptionKey)
+            // Auto migrate if no version is specified, or if specified version is older than current
+            if currentVersion == versionKey.currentVersion || currentVersion == nil {
+                desc.shouldMigrateStoreAutomatically = true
+                desc.shouldInferMappingModelAutomatically = true
+                desc.setOption(versionKey.migrationManager(), forKey: NSPersistentStoreStagedMigrationManagerOptionKey)
+            } else {
+                desc.shouldMigrateStoreAutomatically = false
+            }
         }
         
         try self.init(
             modelName: V.ModelDefinition.modelName,
-            model: V.ModelDefinition.model,
+            model: currentVersion?.modelVersion ?? V.ModelDefinition.model,
             mainAuthor: mainAuthor,
             configurations: [persistentHistoryConfiguration, urlConfiguration, versioningConfiguration])
     }
