@@ -14,6 +14,7 @@ Helpful tools for Core Data
         - [Basic DataStack Implementations](#basic-datastack-implementations)
     - [Helper Types](#helper-types)
         - [TransactionAuthor Protocol](#transactionauthor-protocol)
+        - [ModelManager and ModelFileManager Protocols](#modelmanager-and-modelfilemanager-protocols)
         - [ModelVersion Protocol](#modelversion-protocol)
         - [PersistentHistoryTracker actor](#persistenthistorytracker-actor)
 - [CRUD Helpers](#crud-helpers)
