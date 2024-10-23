@@ -18,7 +18,7 @@ public protocol ModelVersion: CaseIterable, Hashable {
     
     /// The title of the model version represented by this instance.
     ///
-    /// If the `PersistentStoreVersion` type is a `RawRepresentable` of type `String`, the
+    /// If the `ModelVersion` type is a `RawRepresentable` of type `String`, the
     /// default implementation of `versionName` takes the raw value of the instance as its version name.
     var versionName: String { get }
     
@@ -27,7 +27,7 @@ public protocol ModelVersion: CaseIterable, Hashable {
     /// <#description#>
     var modelVersion: NSManagedObjectModel { get }
     
-    /// The `PersistentStoreVersion` type must provide an array of `NSMigrationStage` to be used
+    /// The `ModelVersion` type must provide an array of `NSMigrationStage` to be used
     /// to create a migration path across versions of the persistent model.
     ///
     /// The stages must be returned in order from earliest version to latest, in the order that the stages will
@@ -84,14 +84,14 @@ enum MigrationError: Error {
 extension ModelVersion {
     public typealias MigrationHandler = (NSManagedObjectContext) throws -> Void
     
-    /// Creates a `NSStagedMigrationManager` from the `PersistentStoreVersion`'s
+    /// Creates a `NSStagedMigrationManager` from the `ModelVersion`'s
     /// `migrationStages()` function to be added to the persistent store.
     public static func migrationManager() -> NSStagedMigrationManager {
         NSStagedMigrationManager(migrationStages())
     }
     
     /// A helper function that creates a distinct `NSMigrationStage` from the calling version to the next
-    /// `PersistentStoreVersion` for use in building a series of staged migration steps.
+    /// `ModelVersion` for use in building a series of staged migration steps.
     ///
     /// - Parameters:
     ///   - toVersion:     The version that this migration stage will end at, starting from the calling version.

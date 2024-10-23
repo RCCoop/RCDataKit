@@ -41,11 +41,11 @@ enum TestingStacks {
         mainAuthor: ModelAuthors = .viewContext1,
         removeOldStore: Bool = true,
         withPersistentHistoryTracking: Bool = false
-    ) throws -> SingleStoreStack<ModelAuthors> {
+    ) throws -> BasicDataStack<ModelAuthors> {
         let url = try prepareStorageURL(name: uniqueName, removeExistingFile: removeOldStore)
         print("Creating temporary stack at \(url.path())")
         let trackingOptions = withPersistentHistoryTracking ? PersistentHistoryTrackingOptions() : nil
-        let store = try SingleStoreStack(
+        let store = try BasicDataStack(
             TestModel.self,
             storeURL: url,
             mainAuthor: mainAuthor,
@@ -67,12 +67,12 @@ extension TestingStacks {
     static func oldModelStack(
         uniqueName: String,
         mainAuthor: ModelAuthors = .viewContext1
-    ) throws -> SingleStoreStack<ModelAuthors> {
+    ) throws -> BasicDataStack<ModelAuthors> {
         // Copy testing version of Sqlite store to temporary location
         let url = try prepareStorageURL(name: uniqueName)
         try FileManager.default.copyItem(at: oldSqliteURL, to: url)
         
-        let stack = try SingleStoreStack(
+        let stack = try BasicDataStack(
             storeURL: url,
             versionKey: ModelVersions.self,
             currentVersion: .v1,
@@ -83,12 +83,12 @@ extension TestingStacks {
     static func migratedContainer(
         uniqueName: String,
         mainAuthor: ModelAuthors = .viewContext1
-    ) throws -> SingleStoreStack<ModelAuthors> {
+    ) throws -> BasicDataStack<ModelAuthors> {
         // Copy testing version of Sqlite store to temporary location:
         let url = try prepareStorageURL(name: uniqueName)
         try FileManager.default.copyItem(at: oldSqliteURL, to: url)
         
-        let stack = try SingleStoreStack(
+        let stack = try BasicDataStack(
             storeURL: url,
             versionKey: ModelVersions.self,
             mainAuthor: mainAuthor)

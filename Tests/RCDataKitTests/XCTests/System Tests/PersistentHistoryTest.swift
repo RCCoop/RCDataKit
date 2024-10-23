@@ -10,8 +10,8 @@ class PersistentHistoryTest: XCTestCase {
     
     var timestampManager = DefaultTimestampManager()
     
-    var stack1: SingleStoreStack<ModelAuthors>!
-    var stack2: SingleStoreStack<ModelAuthors>!
+    var stack1: BasicDataStack<ModelAuthors>!
+    var stack2: BasicDataStack<ModelAuthors>!
     
     // MARK: - Setup
     

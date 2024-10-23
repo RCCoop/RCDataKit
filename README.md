@@ -88,7 +88,7 @@ let bgContext = myStack.backgroundContext(author: .cloudDataImport)
 There are a few pre-made implementations of `DataStack` available here:
 
 - **PreviewStack** is an in-memory store for use in SwiftUI previews or other non-persisted environments.
-- **SingleStoreStack** is a SQLite-backed stack with a single store, and initialization options for Persistent History Tracking and Staged Migrations.
+- **BasicDataStack** is a SQLite-backed stack with a single store, and initialization options for Persistent History Tracking and Staged Migrations.
 
 ## Helper Types
 
@@ -170,10 +170,10 @@ container.persistentStoreDescriptions
     .setOption(migrationManager, forKey: NSPersistentStoreStagedMigrationManagerOptionKey)
 ```
 
-Alternately, just pass your `ModelVersion` into the initializer for `SingleStoreStack`:
+Alternately, just pass your `ModelVersion` into the initializer for `BasicDataStack`:
 
 ```swift
-let stack = try SingleStoreStack(
+let stack = try BasicDataStack(
                     versionKey: Versions.self,
                     mainAuthor: Authors.iOSViewContext)
 ```
@@ -200,10 +200,10 @@ self.tracker = PersistentHistoryTracker(
 tracker.startMonitoring()
 ```
 
-You can also enable tracking in `SingleStoreStack` by passing in an instance of `PersistentHistoryTrackingOptions` to the initializer:
+You can also enable tracking in `BasicDataStack` by passing in an instance of `PersistentHistoryTrackingOptions` to the initializer:
 
 ```swift
-let stack = try SingleStoreStack(
+let stack = try BasicDataStack(
                     versionKey: Versions.self,
                     mainAuthor: Authors.iOSViewContext,
                     persistentHistoryOptions: .init())

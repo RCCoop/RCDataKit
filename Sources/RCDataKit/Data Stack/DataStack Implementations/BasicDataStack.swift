@@ -1,5 +1,5 @@
 //
-//  SingleStoreStack.swift
+//  BasicDataStack.swift
 //  RCDataKit
 //
 //  Created by Ryan Linn on 10/4/24.
@@ -8,10 +8,10 @@
 import CoreData
 import Foundation
 
-typealias SingleStoreStackConfiguration = (NSPersistentStoreDescription, NSManagedObjectContext) -> Void
+typealias BasicDataStackConfiguration = (NSPersistentStoreDescription, NSManagedObjectContext) -> Void
 
 /// An object that conforms to `DataStack`, and handles basic setup of the
-public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
+public struct BasicDataStack<Authors: TransactionAuthor>: DataStack {
     enum Errors: Error {
         case noStoreDescription
     }
@@ -32,7 +32,7 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
         modelName: String,
         model: NSManagedObjectModel,
         mainAuthor: Authors,
-        configurations: [SingleStoreStackConfiguration]
+        configurations: [BasicDataStackConfiguration]
     ) throws {
         // Create NSPersistentContainer
         self.container = NSPersistentContainer(name: modelName, managedObjectModel: model)
@@ -75,13 +75,13 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
         persistentHistoryOptions: PersistentHistoryTrackingOptions? = nil
     ) throws {
         
-        let persistentHistoryConfiguration: SingleStoreStackConfiguration = { (desc, context) in
+        let persistentHistoryConfiguration: BasicDataStackConfiguration = { (desc, context) in
             PersistentHistoryTrackingOptions.doConfiguration(
                 options: persistentHistoryOptions,
                 storeDescription: desc,
                 viewContext: context)
         }
-        let urlConfiguration: SingleStoreStackConfiguration = { (desc, context) in
+        let urlConfiguration: BasicDataStackConfiguration = { (desc, context) in
             if let storeURL {
                 desc.url = storeURL
             }
@@ -96,12 +96,12 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
         self.historyTracker = persistentHistoryOptions?.tracker(currentAuthor: mainAuthor, container: container)
     }
     
-    /// Initializes the stack using a type conforming to `PersistentStoreVersion`, with an option to
+    /// Initializes the stack using a type conforming to `ModelVersion`, with an option to
     /// enable Persistent History Tracking.
     ///
     /// - Parameters:
     ///   - storeURL:                 If set, the exact location for the PersistentStore.
-    ///   - versionKey:               The `PersistentStoreVersion` type to use in setting
+    ///   - versionKey:               The `ModelVersion` type to use in setting
     ///                               up the persistent store and its staged version migration chain.
     ///   - currentVersion:           The version to use of the ManagedObjectModel. If no version
     ///                               is given, the version specified by the model file is used.
@@ -118,18 +118,18 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
         mainAuthor: Authors,
         persistentHistoryOptions: PersistentHistoryTrackingOptions? = nil
     ) throws {
-        let persistentHistoryConfiguration: SingleStoreStackConfiguration = { (desc, context) in
+        let persistentHistoryConfiguration: BasicDataStackConfiguration = { (desc, context) in
             PersistentHistoryTrackingOptions.doConfiguration(
                 options: persistentHistoryOptions,
                 storeDescription: desc,
                 viewContext: context)
         }
-        let urlConfiguration: SingleStoreStackConfiguration = { (desc, context) in
+        let urlConfiguration: BasicDataStackConfiguration = { (desc, context) in
             if let storeURL {
                 desc.url = storeURL
             }
         }
-        let versioningConfiguration: SingleStoreStackConfiguration = { (desc, context) in
+        let versioningConfiguration: BasicDataStackConfiguration = { (desc, context) in
             // Auto migrate if no version is specified, or if specified version is older than current
             if currentVersion == versionKey.currentVersion || currentVersion == nil {
                 desc.shouldMigrateStoreAutomatically = true
