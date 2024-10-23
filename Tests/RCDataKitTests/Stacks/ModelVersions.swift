@@ -1,5 +1,5 @@
 //
-//  ModelVersionKey.swift
+//  ModelVersions.swift
 //  RCDataKit
 //
 //  Created by Ryan Linn on 10/13/24.
@@ -9,7 +9,7 @@ import CoreData
 import RCDataKit
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-enum ModelVersions: String, ModelVersionKey {
+enum ModelVersions: String, ModelVersion {
     typealias ModelDefinition = ModelKey
         
     case v1 = "Model"

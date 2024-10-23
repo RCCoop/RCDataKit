@@ -14,7 +14,7 @@ Helpful tools for Core Data
         - [Basic DataStack Implementations](#basic-datastack-implementations)
     - [Helper Types](#helper-types)
         - [TransactionAuthor Protocol](#transactionauthor-protocol)
-        - [PersistentStoreVersion Protocol](#persistentstoreversion-protocol)
+        - [ModelVersion Protocol](#modelversion-protocol)
         - [PersistentHistoryTracker actor](#persistenthistorytracker-actor)
 - [CRUD Helpers](#crud-helpers)
     - [Updatable Protocol](#updatable-protocol)
@@ -113,18 +113,18 @@ enum Authors: String, TransactionAuthor {
 }
 ```
 
-### PersistentStoreVersion Protocol
+### ModelVersion Protocol
 
 Migrating your Model from one version to the next can be a huge pain— Lightweight Migrations are easy enough, but Custom Migrations not so much. But now we have [Staged Migrations](https://developer.apple.com/videos/play/wwdc2022/10120/)! Unfortunately, [Apple’s documentation](https://developer.apple.com/documentation/coredata/staged_migrations) is lacking. Thanks to [Pol Piela](https://www.polpiella.dev/staged-migrations) and [FatBobMan](https://fatbobman.com/en/posts/what-s-new-in-core-data-in-wwdc23/) for picking up the slack.
 
-With the `PersistentStoreVersion` protocol, setting up staged migrations takes a lot less boilerplate code, so you can do the important work.
+With the `ModelVersion` protocol, setting up staged migrations takes a lot less boilerplate code, so you can do the important work.
 
 1. Make a type that conforms to the protocol, and make it reference the names of your model and its versions:
 
 <img width="160" alt="Screenshot_2024-09-15_at_10 24 58_AM" src="https://github.com/user-attachments/assets/9a42ca82-72c2-4c17-afa7-7bba80fa9f7a">
 
 ```swift
-enum ModelVersions: String, PersistentStoreVersion {
+enum Versions: String, ModelVersion {
     static var modelName: String {
         "TestModel"
     }
@@ -139,7 +139,7 @@ enum ModelVersions: String, PersistentStoreVersion {
 2. Create an array of migration stages to walk through your version upgrades:
 
 ```swift
-extension ModelVersions {
+extension Versions {
     static func migrationStages() -> [NSMigrationStage] {
         [
             v1.migrationStage(
@@ -164,17 +164,17 @@ extension ModelVersions {
 3. When creating your `NSPersistentContainer`, add a `NSStagedMigrationManager` to the description options:
 
 ```swift
-let migrationManager = ModelVersions.migrationManager()
+let migrationManager = Versions.migrationManager()
 container.persistentStoreDescriptions
     .first?
     .setOption(migrationManager, forKey: NSPersistentStoreStagedMigrationManagerOptionKey)
 ```
 
-Alternately, just pass your `PersistentStoreVersion` into the initializer for `SingleStoreStack`:
+Alternately, just pass your `ModelVersion` into the initializer for `SingleStoreStack`:
 
 ```swift
 let stack = try SingleStoreStack(
-                    versionKey: ModelVersions.self,
+                    versionKey: Versions.self,
                     mainAuthor: Authors.iOSViewContext)
 ```
 
@@ -204,7 +204,7 @@ You can also enable tracking in `SingleStoreStack` by passing in an instance of 
 
 ```swift
 let stack = try SingleStoreStack(
-                    versionKey: ModelVersions.self,
+                    versionKey: Versions.self,
                     mainAuthor: Authors.iOSViewContext,
                     persistentHistoryOptions: .init())
 

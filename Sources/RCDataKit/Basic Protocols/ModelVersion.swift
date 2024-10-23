@@ -1,5 +1,5 @@
 //
-//  PersistentStoreVersion.swift
+//  ModelVersion.swift
 //
 
 import CoreData
@@ -8,7 +8,7 @@ import UniformTypeIdentifiers
 /// A protocol used to streamline the process of building a `NSStagedMigrationManager` for your Core
 /// Data Persistent Model.
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-public protocol ModelVersionKey: CaseIterable, Hashable {
+public protocol ModelVersion: CaseIterable, Hashable {
     associatedtype ModelDefinition: ManagedModelFile
     
     /// The instance of `Self` that represents the current version of the data model.
@@ -41,14 +41,14 @@ public protocol ModelVersionKey: CaseIterable, Hashable {
 // MARK: - Default Implementations
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-public extension ModelVersionKey where Self: RawRepresentable, RawValue == String {
+public extension ModelVersion where Self: RawRepresentable, RawValue == String {
     var versionName: String {
         rawValue
     }
 }
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-extension ModelVersionKey {
+extension ModelVersion {
     /// <#description#> default implementation...
     public var modelVersion: NSManagedObjectModel {
         if self == Self.currentVersion {
@@ -81,7 +81,7 @@ enum MigrationError: Error {
 }
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-extension ModelVersionKey {
+extension ModelVersion {
     public typealias MigrationHandler = (NSManagedObjectContext) throws -> Void
     
     /// Creates a `NSStagedMigrationManager` from the `PersistentStoreVersion`'s

@@ -111,7 +111,7 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     ///                               is given, the stack's viewContext automatically merges changes
     ///                               from the store, but without custom history tracking.
     @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
-    public init<V: ModelVersionKey>(
+    public init<V: ModelVersion>(
         storeURL: URL? = nil,
         versionKey: V.Type,
         currentVersion: V? = nil,
