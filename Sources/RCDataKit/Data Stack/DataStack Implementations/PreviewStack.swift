@@ -24,7 +24,7 @@ public struct PreviewStack: DataStack {
     /// - Parameters:
     ///   - modelDefinition: <#modelDefinition description#>
     ///   - name: <#name description#>
-    public init<ModelDefinition: ManagedModelDefinition>(
+    public init<ModelDefinition: ModelManager>(
         _ modelDefinition: ModelDefinition.Type,
         name: String
     ) {
@@ -41,7 +41,7 @@ public struct PreviewStack: DataStack {
     
     /// <#Description#>
     /// - Parameter modelDefinition: <#modelDefinition description#>
-    public init<ModelDefinition: ManagedModelFile>(
+    public init<ModelDefinition: ModelFileManager>(
         _ modelDefinition: ModelDefinition.Type
     ) {
         self.init(ModelDefinition.self, name: modelDefinition.modelName)

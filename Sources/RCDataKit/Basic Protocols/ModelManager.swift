@@ -1,5 +1,5 @@
 //
-//  ManagedModelDefinition.swift
+//  ModelManager.swift
 //  RCDataKit
 //
 //  Created by Ryan Linn on 10/17/24.
@@ -8,13 +8,14 @@
 import CoreData
 
 /// <#Description#>
-public protocol ManagedModelDefinition {
+public protocol ModelManager {
     /// <#Description#>
     static var model: NSManagedObjectModel { get }
 }
 
 /// <#Description#>
-public protocol ManagedModelFile: ManagedModelDefinition {
+/// represented by an `xcdatamodeld` file
+public protocol ModelFileManager: ModelManager {
     /// <#Description#>
     static var bundle: Bundle { get }
     

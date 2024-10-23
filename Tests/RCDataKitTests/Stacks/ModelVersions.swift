@@ -10,7 +10,7 @@ import RCDataKit
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
 enum ModelVersions: String, ModelVersion {
-    typealias ModelDefinition = ModelKey
+    typealias ModelFile = TestModel
         
     case v1 = "Model"
     case v2 = "Model2"

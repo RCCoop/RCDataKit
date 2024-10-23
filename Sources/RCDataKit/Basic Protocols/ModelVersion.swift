@@ -9,7 +9,7 @@ import UniformTypeIdentifiers
 /// Data Persistent Model.
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
 public protocol ModelVersion: CaseIterable, Hashable {
-    associatedtype ModelDefinition: ManagedModelFile
+    associatedtype ModelFile: ModelFileManager
     
     /// The instance of `Self` that represents the current version of the data model.
     ///
@@ -52,11 +52,11 @@ extension ModelVersion {
     /// <#description#> default implementation...
     public var modelVersion: NSManagedObjectModel {
         if self == Self.currentVersion {
-            return ModelDefinition.model
+            return ModelFile.model
         } else {
             return NSManagedObjectModel.named(
-                ModelDefinition.modelName,
-                in: ModelDefinition.bundle,
+                ModelFile.modelName,
+                in: ModelFile.bundle,
                 versionName: versionName)!
         }
     }

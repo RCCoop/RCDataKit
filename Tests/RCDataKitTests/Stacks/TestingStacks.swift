@@ -32,7 +32,7 @@ enum TestingStacks {
     }
     
     static func inMemoryContainer() throws -> NSPersistentContainer {
-        let stack = PreviewStack(ModelKey.self)
+        let stack = PreviewStack(TestModel.self)
         return stack.container
     }
     
@@ -46,7 +46,7 @@ enum TestingStacks {
         print("Creating temporary stack at \(url.path())")
         let trackingOptions = withPersistentHistoryTracking ? PersistentHistoryTrackingOptions() : nil
         let store = try SingleStoreStack(
-            ModelKey.self,
+            TestModel.self,
             storeURL: url,
             mainAuthor: mainAuthor,
             persistentHistoryOptions: trackingOptions)

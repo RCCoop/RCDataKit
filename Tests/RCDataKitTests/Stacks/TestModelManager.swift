@@ -1,5 +1,5 @@
 //
-//  ModelKey.swift
+//  TestModelManager.swift
 //  RCDataKit
 //
 //  Created by Ryan Linn on 10/17/24.
@@ -8,7 +8,7 @@
 import CoreData
 import RCDataKit
 
-enum ModelKey: ManagedModelFile {
+enum TestModel: ModelFileManager {
     static var bundle: Bundle { .module }
     
     static var modelName: String { "TestModel" }

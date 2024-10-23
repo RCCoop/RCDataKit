@@ -68,7 +68,7 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
     ///                               that describe how to set up Persistent History Tracking. If none
     ///                               is given, the stack's viewContext automatically merges changes
     ///                               from the store, but without custom history tracking.
-    public init<ModelDefinition: ManagedModelFile>(
+    public init<ModelDefinition: ModelFileManager>(
         _ modelDefinition: ModelDefinition.Type,
         storeURL: URL? = nil,
         mainAuthor: Authors,
@@ -141,8 +141,8 @@ public struct SingleStoreStack<Authors: TransactionAuthor>: DataStack {
         }
         
         try self.init(
-            modelName: V.ModelDefinition.modelName,
-            model: currentVersion?.modelVersion ?? V.ModelDefinition.model,
+            modelName: V.ModelFile.modelName,
+            model: currentVersion?.modelVersion ?? V.ModelFile.model,
             mainAuthor: mainAuthor,
             configurations: [persistentHistoryConfiguration, urlConfiguration, versioningConfiguration])
     }
