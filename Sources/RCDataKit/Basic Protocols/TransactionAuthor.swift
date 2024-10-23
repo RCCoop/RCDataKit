@@ -24,9 +24,3 @@ public extension TransactionAuthor where Self: RawRepresentable, RawValue == Str
         rawValue
     }
 }
-
-public extension Collection where Element: TransactionAuthor {
-    var authorNames: [String] {
-        map(\.name)
-    }
-}

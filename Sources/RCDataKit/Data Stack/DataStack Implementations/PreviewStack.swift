@@ -20,15 +20,16 @@ public struct PreviewStack: DataStack {
     
     public let container: NSPersistentContainer
     
-    /// <#Description#>
+    /// Initializes a `PreviewStack` using a `ModelManager` type and a name for the model to use.
+    ///
     /// - Parameters:
-    ///   - modelDefinition: <#modelDefinition description#>
-    ///   - name: <#name description#>
-    public init<ModelDefinition: ModelManager>(
-        _ modelDefinition: ModelDefinition.Type,
+    ///   - model: A type conforming to `ModelManager`.
+    ///   - name: The name to give the PersistentContainer.
+    public init<Model: ModelManager>(
+        _ model: Model.Type,
         name: String
     ) {
-        self.container = NSPersistentContainer(name: name, managedObjectModel: modelDefinition.model)
+        self.container = NSPersistentContainer(name: name, managedObjectModel: model.model)
         
         container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         
@@ -39,11 +40,13 @@ public struct PreviewStack: DataStack {
         }
     }
     
-    /// <#Description#>
-    /// - Parameter modelDefinition: <#modelDefinition description#>
-    public init<ModelDefinition: ModelFileManager>(
-        _ modelDefinition: ModelDefinition.Type
+    /// Initializes a `PreviewStack` using just a `ModelFileManager` type.
+    ///
+    /// - Parameter model: The type that conforms to `ModelFileManager` to use in creating the
+    ///                    PersistentContainer.
+    public init<Model: ModelFileManager>(
+        _ model: Model.Type
     ) {
-        self.init(ModelDefinition.self, name: modelDefinition.modelName)
+        self.init(Model.self, name: model.modelName)
     }
 }

@@ -23,8 +23,8 @@ public struct BasicDataStack<Authors: TransactionAuthor>: DataStack {
     /// Private initializer that underpins the public initializers.
     ///
     /// - Parameters:
-    ///   - modelName:      The title of the ManagedObjectModel file.
-    ///   - model:          <#description#>
+    ///   - modelName:      The title of the managed object model.
+    ///   - model:          The managed model used to initialize the store.
     ///   - mainAuthor:     The `Author` case to use in the stack's viewContext.
     ///   - configurations: An array of actions taken after the container's descriptions are created
     ///                     and before the stores are loaded.
@@ -59,7 +59,8 @@ public struct BasicDataStack<Authors: TransactionAuthor>: DataStack {
     /// to enable Persistent History Tracking.
     ///
     /// - Parameters:
-    ///   - modelDefinition:          <#description#>
+    ///   - modelFile:                A type of `ModelFileManager` used to create the
+    ///                               persistent store.
     ///   - storeURL:                 If set, the exact location for the PersistentStore.
     ///   - modelVersion:             The title of the version to use of the ManagedObjectModel. If no version
     ///                               is given, the version specified by the model file is used.
@@ -68,8 +69,8 @@ public struct BasicDataStack<Authors: TransactionAuthor>: DataStack {
     ///                               that describe how to set up Persistent History Tracking. If none
     ///                               is given, the stack's viewContext automatically merges changes
     ///                               from the store, but without custom history tracking.
-    public init<ModelDefinition: ModelFileManager>(
-        _ modelDefinition: ModelDefinition.Type,
+    public init<ModelFile: ModelFileManager>(
+        _ modelFile: ModelFile.Type,
         storeURL: URL? = nil,
         mainAuthor: Authors,
         persistentHistoryOptions: PersistentHistoryTrackingOptions? = nil
@@ -88,8 +89,8 @@ public struct BasicDataStack<Authors: TransactionAuthor>: DataStack {
         }
         
         try self.init(
-            modelName: modelDefinition.modelName,
-            model: modelDefinition.model,
+            modelName: modelFile.modelName,
+            model: modelFile.model,
             mainAuthor: mainAuthor,
             configurations: [persistentHistoryConfiguration, urlConfiguration])
         

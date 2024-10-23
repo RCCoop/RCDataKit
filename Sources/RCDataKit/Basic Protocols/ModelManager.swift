@@ -7,18 +7,27 @@
 
 import CoreData
 
-/// <#Description#>
+/// A type that is used to provide a definition of a `NSManagedObjectModel`.
+///
+/// On its own, `ModelManager` isn't used anywhere yet, but a sub-protocol, `ModelFileManager`,
+/// has many uses. See that protocol for more info.
 public protocol ModelManager {
-    /// <#Description#>
+    /// The only requirement for `ModelManager` is to create and store an instance of
+    /// `NSManagedObjectModel`.
+    ///
+    /// This should be a stored property, since creating multiple `NSManagedObjectModel` instances
+    /// with the same model causes errors in Core Data.
     static var model: NSManagedObjectModel { get }
 }
 
-/// <#Description#>
-/// represented by an `xcdatamodeld` file
+/// A `ModelManager` that represents a xcdatamodeld file defining a Core Data `NSManagedObjectModel`.
+///
+/// Defining a type that conforms to `ModelFileManager` allows the type to be used in other types throughout
+/// this package to simplify data stack creation.
 public protocol ModelFileManager: ModelManager {
-    /// <#Description#>
+    /// The bundle in which to find the xcdatamodeld file represented by this type.
     static var bundle: Bundle { get }
     
-    /// <#Description#>
+    /// The title of the xcdatamodeld file represented by this type.
     static var modelName: String { get }
 }

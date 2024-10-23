@@ -24,7 +24,8 @@ public protocol ModelVersion: CaseIterable, Hashable {
     
     /// The `NSManagedObjectModel` represented by this version of the model.
     ///
-    /// <#description#>
+    /// The default implementation of this variable will return the model inferred from the `ModelFile`
+    /// type associated with this type.
     var modelVersion: NSManagedObjectModel { get }
     
     /// The `ModelVersion` type must provide an array of `NSMigrationStage` to be used
@@ -49,7 +50,6 @@ public extension ModelVersion where Self: RawRepresentable, RawValue == String {
 
 @available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, macCatalyst 17.0, *)
 extension ModelVersion {
-    /// <#description#> default implementation...
     public var modelVersion: NSManagedObjectModel {
         if self == Self.currentVersion {
             return ModelFile.model

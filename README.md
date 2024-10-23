@@ -58,7 +58,7 @@ In your own Package, add the following to your dependencies:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/RCCoop/RCDataKit", .upToNextMajor(from: "0.1"))
+  .package(url: "https://github.com/RCCoop/RCDataKit", .upToNextMajor(from: "0.1.0"))
 ]
 ```
 
@@ -113,21 +113,44 @@ enum Authors: String, TransactionAuthor {
 }
 ```
 
+### ModelManager and ModelFileManager Protocols
+
+These two paired protocols (mostly `ModelFileManager`, which inherits from `ModelManager`) are required by several other parts of this library to automate some of the boilerplate in creating a `NSManagedObjectModel`. The `ModelFileManager` represents the `.xcdatamodeld` file that most of us use to create our managed object model.
+
+Defining a `ModelFileManager` is simple:
+
+```swift
+enum TestModelFile: ModelFileManager {
+    static var bundle: Bundle {
+        .main // or use .module if your model file is in a separate module
+    }
+    
+    static var modelName: String {
+        "TestModel"
+    }
+    
+    static let model: NSManagedObjectModel = {
+        // Use one of RCDataKit's convenience methods to create the model:
+        NSManagedObjectModel.named(modelName, in: bundle)
+    }()
+}
+```
+
+Then you can use your `ModelFileManager` type in initializers for `BasicDataStack` and `PreviewStack`, and in your `ModelVersion` protocol implementation.
+
 ### ModelVersion Protocol
 
 Migrating your Model from one version to the next can be a huge pain— Lightweight Migrations are easy enough, but Custom Migrations not so much. But now we have [Staged Migrations](https://developer.apple.com/videos/play/wwdc2022/10120/)! Unfortunately, [Apple’s documentation](https://developer.apple.com/documentation/coredata/staged_migrations) is lacking. Thanks to [Pol Piela](https://www.polpiella.dev/staged-migrations) and [FatBobMan](https://fatbobman.com/en/posts/what-s-new-in-core-data-in-wwdc23/) for picking up the slack.
 
 With the `ModelVersion` protocol, setting up staged migrations takes a lot less boilerplate code, so you can do the important work.
 
-1. Make a type that conforms to the protocol, and make it reference the names of your model and its versions:
+1. Make a type that conforms to the protocol, and make it reference the names of your model versions, and give it a `ModelFileManager` type:
 
 <img width="160" alt="Screenshot_2024-09-15_at_10 24 58_AM" src="https://github.com/user-attachments/assets/9a42ca82-72c2-4c17-afa7-7bba80fa9f7a">
 
 ```swift
 enum Versions: String, ModelVersion {
-    static var modelName: String {
-        "TestModel"
-    }
+    typealias ModelFile = TestModelFile
 
     case v1 = "Model"
     case v2 = "Model2"

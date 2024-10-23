@@ -8,11 +8,13 @@
 import CoreData
 
 extension NSManagedObjectModel {
-    /// <#Description#>
+    /// Returns the URL for the ManagedObjectModel file with a given name in the given bundle.
+    ///
     /// - Parameters:
-    ///   - bundle: <#bundle description#>
-    ///   - modelName: <#modelName description#>
-    /// - Returns: <#description#>
+    ///   - bundle: The bundle where the xcdatamodeld file is located.
+    ///   - modelName: The title of the xcdatamodeld file.
+    ///
+    /// - Returns: the file URL for the given model.
     public static func modelURL(
         bundle: Bundle = .main,
         modelName: String
@@ -29,12 +31,16 @@ extension NSManagedObjectModel {
             .appendingPathComponent(versionName + ".mom", conformingTo: .managedObjectModel)
     }
     
-    /// <#Description#>
+    /// Returns an initialized `NSManagedObjectModel` instance from a given xcdatamodeld file and
+    /// a version of the model contained in it.
+    ///
     /// - Parameters:
-    ///   - modelName: <#modelName description#>
-    ///   - bundle: <#bundle description#>
-    ///   - versionName: <#versionName description#>
-    /// - Returns: <#description#>
+    ///   - modelName:    The title of the xcdatamodeld file.
+    ///   - bundle:       The bundle in which to find the file.
+    ///   - versionName:  The title of the version to use. If no version is specified, the file's default
+    ///                   version is used.
+    ///
+    /// - Returns: An instance of `NSManagedObjectModel` if one can be created from the given parameters.
     public static func named(
         _ modelName: String,
         in bundle: Bundle = .main,
