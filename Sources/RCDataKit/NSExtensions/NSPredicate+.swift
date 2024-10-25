@@ -28,7 +28,15 @@ extension NSPredicate {
     }
 }
 
-// MARK: - Equatable & Comparable
+// MARK: - NSPredicate Construction
+
+extension NSComparisonPredicate.Options {
+    public static var caseAndDiacriticInsensitive: Self {
+        [.caseInsensitive, diacriticInsensitive]
+    }
+}
+
+// MARK: Equatable & Comparable
 
 // General Equal
 public func == <T: NSManagedObject, V: Equatable>(
@@ -144,7 +152,7 @@ extension KeyPath where Root: NSManagedObject, Value: Comparable {
     }
 }
 
-// MARK: - Strings
+// MARK: Strings
 
 extension KeyPath where Root: NSManagedObject, Value == String {
     
@@ -180,26 +188,6 @@ extension KeyPath where Root: NSManagedObject, Value == String {
             ),
             modifier: .direct,
             type: .equalTo,
-            options: options
-        )
-    }
-    
-    // String In
-    public func `in`<C: Collection>(
-        _ collection: C,
-        options: NSComparisonPredicate.Options
-    ) -> NSPredicate
-        where C.Element: StringProtocol
-    {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: collection
-            ),
-            modifier: .direct,
-            type: .in,
             options: options
         )
     }

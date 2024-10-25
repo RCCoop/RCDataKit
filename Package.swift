@@ -31,6 +31,7 @@ let package = Package(
             resources: [
                 .copy("TestsDataModel/Sample Data/SchoolsData.json"),
                 .copy("TestsDataModel/Sample Data/OldStudentsStore.sqlite"),
+                .copy("TestsDataModel/Sample Data/TestSubjects.csv"),
             ]),
     ]
 )

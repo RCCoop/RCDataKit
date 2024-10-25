@@ -349,7 +349,7 @@ let sorting: [NSSortDescriptor] = [
 
 ### NSPredicate Helpers
 
-`NSPredicate`s can be combined with `&&`, `||`, and `!=` operators
+`NSPredicate`s can be combined with `&&`, `||`, and `!` operators
 
 ```swift
 let predicate1 = NSPredicate(format: "'age' >= 13")
@@ -368,16 +368,16 @@ let isOlderThanDirt = \Person.age > 1000
 let notFred = \Person.name != "Fred"
 
 // Or wrap the KeyPath in parentheses for further NSPredicate functions:
-let isTeenager = (\Person.age).between(13, and: 19)
+let isTeenager = (\Person.age).between(13...19)
 let isOddTeen = (\Person.age).in([11, 13, 15, 17, 19])
 
 // String properties can have comparison options, too:
 let definitelyNotFred = (\Person.name).notEqual(
             to: "Fred",
-            options: [.caseInsensitive, .diacriticInsensitive])
+            options: .caseAndDiacriticInsensitive)
 ```
 
-For a more robust, type-safe `NSPredicate` system, check out [PredicateKit](<https://github.com/ftchirou/PredicateKit>)
+For a more robust, elegant, and type-safe `NSPredicate` system, check out [PredicateKit](<https://github.com/ftchirou/PredicateKit>)
 
 ## Further Plans
 

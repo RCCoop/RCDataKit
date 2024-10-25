@@ -8,139 +8,238 @@ import XCTest
 
 final class PredicateTests: XCTestCase {
     
-    var container: NSPersistentContainer!
-    
-    var viewContext: NSManagedObjectContext {
-        container.viewContext
-    }
-    
-    override func setUp() async throws {
-        try await super.setUp()
-        container = try TestingStacks.inMemoryContainer()
+    func testBasicPredicates() throws {
+        // Setup:
+        let stack = try TestingStacks.temporaryStack(uniqueName: "PredicateTests")
+        let context = stack.viewContext
+        let testSubjects = try TestSubjectsData()
+        let importResult = try context.importPersistableObjects(testSubjects.subjects)
+        try context.save()
         
-//        try addStudentsFromSampleData(context: container.viewContext)
-    }
-    
-    override func tearDown() async throws {
-        try await super.tearDown()
+        guard importResult.count == 50 else {
+            XCTFail("Didn't import all test subjects. \(importResult.count)")
+            return
+        }
         
-        self.container = nil
-    }
+        let requestWhere: (NSPredicate) throws -> [TestSubject] = { predicate in
+            try context.fetch(TestSubject.fetchRequest().where(predicate))
+        }
+        
+        // UUID Tests
+        let someUUIDs = [
+            "25dc9c71-bf96-49b4-9b82-1fa131d225a3",
+            "26db1066-2a43-4b56-b04d-c0105f5d4ec5",
+            "2780a9f4-3d4b-4ff7-9ec5-7d1989d5b7de"
+        ].map { UUID(uuidString: $0)! }
+        
+        // equal
+        let oneResult = try requestWhere(\TestSubject.id == someUUIDs[0])
+        XCTAssertEqual(oneResult.count, 1)
+        
+        // IN
+        let threeResults = try requestWhere((\TestSubject.id).in(someUUIDs))
+        XCTAssertEqual(threeResults.count, 3)
+        
+        // not equal
+        let lotsOfResults = try requestWhere(\TestSubject.id != someUUIDs[0])
+        XCTAssertEqual(lotsOfResults.count, 49)
+        
+        // String Tests
+        // equal
+        let david = try requestWhere(\TestSubject.name == "David Schwarz")
+        XCTAssertEqual(david.count, 1)
+        
+        // not equal
+        let notDavid = try requestWhere(\TestSubject.name != "David Schwarz")
+        XCTAssertEqual(notDavid.count, 49)
+        
+        // equal with options
+        let lukas = try requestWhere((\TestSubject.name).equal(to: "lukas gross", options: .caseInsensitive))
+        XCTAssertEqual(lukas.count, 1)
+        let clara = try requestWhere((\TestSubject.name).equal(to: "clara kohler", options: .caseAndDiacriticInsensitive))
+        XCTAssertEqual(clara.count, 1)
+        
+        // not equal with options
+        let notLukas = try requestWhere((\TestSubject.name).notEqual(to: "lukas gross", options: .caseInsensitive))
+        XCTAssertEqual(notLukas.count, 49)
+        let notClara = try requestWhere((\TestSubject.name).notEqual(to: "clara kohler", options: .caseAndDiacriticInsensitive))
+        XCTAssertEqual(notClara.count, 49)
+        
+        // LIKE
+        // Hannah Vogel and Finn Bräutigam
+        let likeResults = try requestWhere((\TestSubject.name).like("??nn*"))
+        XCTAssertEqual(likeResults.count, 2)
+        
+        // CONTAINS
+        // Clara Köhler, Lara Wagner, and Clara Huber
+        let containsResults = try requestWhere((\TestSubject.name).contains("lara", options: .caseInsensitive))
+        XCTAssertEqual(containsResults.count, 3)
+        
+        // BEGINSWITH
+        // Anna Schäfer and Anton Straßmann
+        let beginsWithResults = try requestWhere((\TestSubject.name).beginsWith("an", options: .caseInsensitive))
+        XCTAssertEqual(beginsWithResults.count, 2)
+        
+        // ENDSWITH
+        // Lukas Groß, Sophie Weiß, Jonas Strauß, and Pia Reiß
+        let endsWithResults = try requestWhere((\TestSubject.name).endsWith("ss"))
+        XCTAssertEqual(endsWithResults.count, 4)
+        
+        // matches regex
+        // three-letter first name
+        let regex = "^\\b\\w{3}\\b \\w+$"
+        let regexResults = try requestWhere((\TestSubject.name).matches(regex))
+        XCTAssertEqual(regexResults.count, 8)
+        
+        // Int Tests
+        // equal
+        let zeroScore = try requestWhere(\TestSubject.score == 0)
+        XCTAssertEqual(zeroScore.count, 1)
+        
+        // not equal
+        let notZeroScore = try requestWhere(\TestSubject.score != 0)
+        XCTAssertEqual(notZeroScore.count, 49)
+        
+        // greater
+        let moreThanNinety = try requestWhere(\TestSubject.score > 90)
+        XCTAssertEqual(moreThanNinety.count, 2)
+        
+        // greater or equal
+        let atLeastInt = try requestWhere(\TestSubject.score >= 75)
+        XCTAssertEqual(atLeastInt.count, 11)
+        
+        // less than
+        let lessThanTen = try requestWhere(\TestSubject.score < 10)
+        XCTAssertEqual(lessThanTen.count, 4)
 
-    // TODO: Predicate Tests!
-    
-    /*
-    func testBasicSetupPredicates() throws {
-        let simpsonsRequest = Student.studentRequest()
-        simpsonsRequest.sortDescriptors = sortById
-        simpsonsRequest.predicate = simpsonsPredicate
-        let simpsons = try viewContext.fetch(simpsonsRequest)
+        // less than or equal
+        let atMost15 = try requestWhere(\TestSubject.score <= 15)
+        XCTAssertEqual(atMost15.count, 6)
+
+        // between
+        let teen = try requestWhere((\TestSubject.score).between(10...19))
+        XCTAssertEqual(teen.count, 2)
+
+        // in
+        let tens = try requestWhere((\TestSubject.score).in([10, 20, 30, 40, 50, 60, 70, 80, 90]))
+        XCTAssertEqual(tens.count, 4)
+
+        // Double Tests
+        // equal
+        let doubleEqual = try requestWhere(\TestSubject.height == 1.40)
+        XCTAssertEqual(doubleEqual.count, 2)
+
+        // not equal
+        let doubleNotEqual = try requestWhere(\TestSubject.height != 1.40)
+        XCTAssertEqual(doubleNotEqual.count, 48)
+
+        // greater
+        let doubleGreater = try requestWhere(\TestSubject.height > 1.7)
+        XCTAssertEqual(doubleGreater.count, 17)
+
+        // greater or equal
+        let doubleAtLeast = try requestWhere(\TestSubject.height >= 1.7)
+        XCTAssertEqual(doubleAtLeast.count, 18)
+
+        // less than
+        let doubleLess = try requestWhere(\TestSubject.height < 1.25)
+        XCTAssertEqual(doubleLess.count, 2)
+
+        // less than or equal
+        let doubleAtMost = try requestWhere(\TestSubject.height <= 1.25)
+        XCTAssertEqual(doubleAtMost.count, 4)
+
+        // between
+        let doubleBetween = try requestWhere((\TestSubject.height).between(1.3...1.4))
+        XCTAssertEqual(doubleBetween.count, 7)
+
+        // in
+        let doubleIn = try requestWhere((\TestSubject.height).in([1.4, 1.5, 1.6, 1.7]))
+        XCTAssertEqual(doubleIn.count, 3)
+
+
+        // Boolean Tests
+        // equal
+        let isMale = try requestWhere(\TestSubject.isMale == true)
+        XCTAssertEqual(isMale.count, 26)
         
-        XCTAssertEqual(simpsons.count, 3)
-        XCTAssertEqual(simpsons.map(\.firstName), ["Bart", "Lisa", "Maggie"])
+        // not equal
+        let notMale = try requestWhere(\TestSubject.isMale != true)
+        XCTAssertEqual(notMale.count, 24)
         
-        let bobsRequest = Student.studentRequest()
-        bobsRequest.sortDescriptors = sortById
-        bobsRequest.predicate = bobsPredicate
-        let bobsKids = try viewContext.fetch(bobsRequest)
-        
-        XCTAssertEqual(bobsKids.count, 3)
-        XCTAssertEqual(bobsKids.map(\.firstName), ["Tina", "Gene", "Louise"])
-        
-        let soParkRequest = Student.studentRequest()
-        soParkRequest.sortDescriptors = sortById
-        soParkRequest.predicate = southParkPredicate
-        let parkKids = try viewContext.fetch(soParkRequest)
-        
-        XCTAssertEqual(parkKids.count, 4)
-        XCTAssertEqual(parkKids.map(\.firstName), ["Eric", "Stan", "Kyle", "Kenny"])
+        // Date Tests
+        // equal
+        let equalDate = TestSubject.dob(from: "09/21/1997")!
+        let bornOnDate = try requestWhere(\TestSubject.dateOfBirth == equalDate)
+        XCTAssertEqual(bornOnDate.count, 1)
+
+        // not equal
+        let notBornOnDate = try requestWhere(\TestSubject.dateOfBirth != equalDate)
+        XCTAssertEqual(notBornOnDate.count, 49)
+
+        // greater
+        let greaterDate = TestSubject.dob(from: "12/31/1999")!
+        let bornAfter = try requestWhere(\TestSubject.dateOfBirth > greaterDate)
+        XCTAssertEqual(bornAfter.count, 10)
+
+        // greater or equal
+        let atLeastDate = TestSubject.dob(from: "11/30/2008")!
+        let bornAtLeast = try requestWhere(\TestSubject.dateOfBirth >= atLeastDate)
+        XCTAssertEqual(bornAtLeast.count, 2)
+
+        // less than
+        let lessThanDate = TestSubject.dob(from: "12/31/1959")!
+        let bornBefore = try requestWhere(\TestSubject.dateOfBirth < lessThanDate)
+        XCTAssertEqual(bornBefore.count, 8)
+
+        // less than or equal
+        let atMostDate = TestSubject.dob(from: "09/30/1953")!
+        let bornAtMost = try requestWhere(\TestSubject.dateOfBirth <= atMostDate)
+        XCTAssertEqual(bornAtMost.count, 3)
+
+        // between
+        let startOfSixties = TestSubject.dob(from: "01/01/1960")!
+        let endOfSixties = TestSubject.dob(from: "12/31/1969")!
+        let sixties = startOfSixties...endOfSixties
+        let bornInSixties = try requestWhere((\TestSubject.dateOfBirth).between(sixties))
+        XCTAssertEqual(bornInSixties.count, 7)
+
+        // in
+        let someDates = [equalDate, atLeastDate, atMostDate, .distantPast, .distantFuture]
+        let datesIn = try requestWhere((\TestSubject.dateOfBirth).in(someDates))
+        XCTAssertEqual(datesIn.count, 3)
     }
     
-    func testOrPredicate() throws {
-        let request = Student.studentRequest()
-        request.sortDescriptors = sortById
-        request.predicate = simpsonsPredicate || bobsPredicate
-        let kids = try viewContext.fetch(request)
+    func testOtherPredicates() throws {
+        // Setup:
+        let stack = try TestingStacks.temporaryStack(uniqueName: "AltPredicateTests")
+        let context = stack.viewContext
+        let data = try SchoolsData()
+        let teachersResult = try context.importPersistableObjects(data.teachers)
+        let schoolsResult = try context.importPersistableObjects(data.schools)
+        let studentsResult = try context.importPersistableObjects(data.students)
+        try context.save()
         
-        let firstNames = [
-            "Bart",
-            "Lisa",
-            "Maggie",
-            "Tina",
-            "Gene",
-            "Louise"
-        ]
+        guard !studentsResult.isEmpty,
+              !teachersResult.isEmpty,
+              !schoolsResult.isEmpty
+        else {
+            XCTFail("Didn't import all data")
+            return
+        }
+
+        let southParkElementaryStudentsRequest = Student.fetchRequest()
+            .where(\Student.school?.id == "SOU")
+        let soParkStudents = try context.fetch(southParkElementaryStudentsRequest)
+        XCTAssertEqual(soParkStudents.count, 4)
         
-        XCTAssertEqual(kids.count, 6)
-        XCTAssertEqual(kids.map(\.firstName), firstNames)
+        // Add student with no school
+        let _ = Student(context: context, id: 99, firstName: "No", lastName: "Body")
+        try context.save()
+        
+        let noSchoolRequest = Student.fetchRequest()
+            .where(\Student.school == nil)
+        let noSchoolResult = try context.fetch(noSchoolRequest)
+        XCTAssertEqual(noSchoolResult.count, 1)
     }
-    
-    func testAndPredicate() throws {
-        let idLessThanFivePredicate = \Student.id < 5
-        let request = Student.studentRequest()
-        request.sortDescriptors = sortById
-        request.predicate = southParkPredicate && idLessThanFivePredicate
-        let kids = try viewContext.fetch(request)
-        
-        XCTAssertEqual(kids.count, 2)
-        XCTAssertEqual(kids.map(\.firstName), ["Eric", "Stan"])
-    }
-    
-    func testNotPredicate() throws {
-        let request = Student.studentRequest()
-        request.sortDescriptors = sortById
-        request.predicate = !bobsPredicate
-        let kids = try viewContext.fetch(request)
-        
-        let firstNames = [
-            "Bart",
-            "Lisa",
-            "Maggie",
-            "Eric",
-            "Stan",
-            "Kyle",
-            "Kenny"
-        ]
-        
-        XCTAssertEqual(kids.count, 7)
-        XCTAssertEqual(kids.map(\.firstName), firstNames)
-    }
-    
-    func testObjectIDPredicate() throws {
-        let allStudents = try viewContext.fetch(Student.studentRequest())
-        let simpsonIDs = allStudents
-            .filter { $0.lastName == "Simpson" }
-            .map { $0.objectID }
-        let idsRequest = Student.studentRequest()
-            .where(NSPredicate(managedObjectIds: simpsonIDs))
-        let simpsonsKids = try viewContext.fetch(idsRequest)
-        
-        XCTAssertEqual(simpsonsKids.count, 3)
-        XCTAssert(simpsonsKids.allSatisfy({ $0.lastName == "Simpson" }))
-    }
-    
-    func testObjectIDPredicateTypeMismatch() throws {
-        let someTeacher = Teacher(context: viewContext, id: 0, firstName: "Mr", lastName: "Rogers")
-        try viewContext.save()
-        
-        let request = Student.studentRequest()
-        request.predicate = NSPredicate(managedObjectIds: [someTeacher.objectID])
-        let result = try viewContext.fetch(request)
-        XCTAssertEqual(result.count, 0)
-    }
-    
-    func testComparisonPredicates() {
-        
-        // >
-        let greaterThan = \Student.id > 0
-        let alsoGreaterThan = \Student.id > 5
-        
-        // <
-        
-        // >=
-        
-        // <=
-        
-    }
-     */
 }
