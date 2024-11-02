@@ -9,14 +9,8 @@ import Foundation
 
 /// A basic `DataStack` with no file-backed store (in-memory only) and only one background context
 /// available.
-public struct PreviewStack: DataStack {
-    
-    public enum Authors: String, TransactionAuthor {
-        case viewContext
-        case backgroundContext
-    }
-    
-    public var viewContextID: Authors { .viewContext }
+public struct PreviewStack<Authors: TransactionAuthor>: DataStack {
+    public var viewContextID: Authors { Authors.allCases.first! }
     
     public let container: NSPersistentContainer
     
@@ -25,9 +19,11 @@ public struct PreviewStack: DataStack {
     /// - Parameters:
     ///   - model: A type conforming to `ModelManager`.
     ///   - name: The name to give the PersistentContainer.
+    ///   - authors: The `TransactionAuthor` type for the Data Stack
     public init<Model: ModelManager>(
         _ model: Model.Type,
-        name: String
+        name: String,
+        authors: Authors.Type
     ) {
         self.container = NSPersistentContainer(name: name, managedObjectModel: model.model)
         
@@ -42,11 +38,45 @@ public struct PreviewStack: DataStack {
     
     /// Initializes a `PreviewStack` using just a `ModelFileManager` type.
     ///
-    /// - Parameter model: The type that conforms to `ModelFileManager` to use in creating the
-    ///                    PersistentContainer.
+    /// - Parameters
+    ///   - model: The type that conforms to `ModelFileManager` to use in creating the PersistentContainer.
+    ///   - authors: The `TransactionAuthor` type for the Data Stack
+    public init<Model: ModelFileManager>(
+        _ model: Model.Type,
+        authors: Authors.Type
+    ) {
+        self.init(Model.self, name: model.modelName, authors: authors)
+    }
+}
+
+public enum BasicAuthors: String, TransactionAuthor {
+    case viewContext
+    case backgroundContext
+}
+
+extension PreviewStack where Authors == BasicAuthors {
+    
+    /// Initializes a `PreviewStack` using a `ModelManager` type and a name for the model to use,
+    /// with the default `Authors` type.
+    ///
+    /// - Parameters:
+    ///   - model: A type conforming to `ModelManager`.
+    ///   - name: The name to give the PersistentContainer.
+    public init<Model: ModelManager>(
+        _ model: Model.Type,
+        name: String
+    ) {
+        self.init(model, name: name, authors: BasicAuthors.self)
+    }
+    
+    /// Initializes a `PreviewStack` using just a `ModelFileManager` type and the default `Authors`
+    /// type.
+    ///
+    /// - Parameters
+    ///   - model: The type that conforms to `ModelFileManager` to use in creating the PersistentContainer.
     public init<Model: ModelFileManager>(
         _ model: Model.Type
     ) {
-        self.init(Model.self, name: model.modelName)
+        self.init(model, authors: BasicAuthors.self)
     }
 }
