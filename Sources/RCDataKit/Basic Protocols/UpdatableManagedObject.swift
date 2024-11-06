@@ -30,12 +30,14 @@ public extension Updatable {
     ) -> Bool
     where V: Equatable
     {
-        guard self[keyPath: keyPath] != value else {
+        if let existingValue = self.value(forKey: keyPath.stringRepresentation) as? V,
+           existingValue == value
+        {
             return false
+        } else {
+            self.setValue(value, forKey: keyPath.stringRepresentation)
+            return true
         }
-        var writableSelf = self
-        writableSelf[keyPath: keyPath] = value
-        return true
     }
     
     /// Sets the value of a given property only if the current value is different from the value to set, and the
@@ -81,14 +83,14 @@ public extension Updatable {
         minimumChange: V) -> Bool
     where V: Numeric & Comparable
     {
-        let existingValue = self[keyPath: keyPath]
-        let range = (existingValue - minimumChange)...(existingValue + minimumChange)
-        guard !range.contains(value) else {
+        if let existingValue = self.value(forKey: keyPath.stringRepresentation) as? V,
+           ((existingValue - minimumChange)...(existingValue + minimumChange)).contains(value)
+        {
             return false
+        } else {
+            self.setValue(value, forKey: keyPath.stringRepresentation)
+            return true
         }
-        var writableSelf = self
-        writableSelf[keyPath: keyPath] = value
-        return true
     }
     
     /// Sets the value of a given property only if the current value is not within a given threshold of the new 

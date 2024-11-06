@@ -103,6 +103,11 @@ final class UpdatableManagedObjectTests: XCTestCase {
         XCTAssertFalse(teacherA.hasChanges)
         XCTAssertFalse(teacherB.hasChanges)
         
+        // Attempt an update to nil that will apply
+        XCTAssertTrue(course.update(\.teacher, value: nil))
+        XCTAssertTrue(course.hasChanges)
+        XCTAssertTrue(teacherA.hasChanges)
+        
         // Attempt an update that will apply
         XCTAssertTrue(course.update(\.teacher, value: teacherB))
         XCTAssertTrue(course.hasChanges)
