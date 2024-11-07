@@ -28,6 +28,24 @@ public protocol PersistentHistoryFetcher: Sendable {
     ) throws -> [NSPersistentHistoryTransaction]
 }
 
+extension NSPersistentHistoryTransaction {
+    /// Generates a `NSPredicate` for `NSPersistentHistoryTransaction`s originating from a context
+    /// with the given author name.
+    public static func matchingAuthor<A: TransactionAuthor>(_ author: A) -> NSPredicate {
+        NSPredicate(format: "%K == %@",
+                    #keyPath(NSPersistentHistoryTransaction.author),
+                    author.name)
+    }
+    
+    /// Generates a `NSPredicate` for `NSPersistentHistoryTransaction`s that do not originate
+    /// from a context with the given author name.
+    public static func notMatchingAuthor<A: TransactionAuthor>(_ author: A) -> NSPredicate {
+        NSPredicate(format: "%K != %@",
+                    #keyPath(NSPersistentHistoryTransaction.author),
+                    author.name)
+    }
+}
+
 extension PersistentHistoryTracker {
     /// PersistentHistoryFetcher that fetches only transactions with an `author` based on
     /// the `TransactionAuthors.name` of all authors besides the given `currentAuthor`.
@@ -57,9 +75,7 @@ extension PersistentHistoryTracker {
             
             if let historyFetchRequest = NSPersistentHistoryTransaction.fetchRequest {
                 let subPredicates = currentAuthor.allOtherAuthors.map {
-                    NSPredicate(format: "%K == %@",
-                                #keyPath(NSPersistentHistoryTransaction.author),
-                                $0.name)
+                    NSPersistentHistoryTransaction.matchingAuthor($0)
                 }
                 historyFetchRequest.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: subPredicates)
                 request.fetchRequest = historyFetchRequest
@@ -83,9 +99,8 @@ extension PersistentHistoryTracker {
                 let request = NSPersistentHistoryChangeRequest.fetchHistory(after: minimumDate)
                 
                 if let historyFetchRequest = NSPersistentHistoryTransaction.fetchRequest {
-                    historyFetchRequest.predicate = NSPredicate(format: "%K != %@",
-                                                                #keyPath(NSPersistentHistoryTransaction.author),
-                                                                currentAuthor.name)
+                    historyFetchRequest.predicate = NSPersistentHistoryTransaction
+                        .notMatchingAuthor(currentAuthor)
                     request.fetchRequest = historyFetchRequest
                 }
                 

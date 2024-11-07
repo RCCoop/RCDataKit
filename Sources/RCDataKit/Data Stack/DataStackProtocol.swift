@@ -26,7 +26,7 @@ extension DataStack {
     public var viewContext: NSManagedObjectContext {
         let vc = container.viewContext
         vc.name = "ViewContext"
-        vc.transactionAuthor = viewContextID.name
+        vc.setAuthor(viewContextID)
         
         // Merge Policy?
         // Undo Manager?
@@ -45,7 +45,7 @@ extension DataStack {
         assert(author.name != viewContextID.name, "Background contexts should not have the same name as the viewContext")
         
         let context = container.newBackgroundContext()
-        context.transactionAuthor = author.name
+        context.setAuthor(author)
         context.name = author.name
         
         // Merge Policy?

@@ -4,9 +4,7 @@
 
 import CoreData
 
-public enum RCDataKitErrors: Error {
-    case mismatchedType
-}
+// MARK: - Data Modifications
 
 public extension NSManagedObjectContext {
     /// Attempts to save the context only if changes are present in it. Otherwise, skips the save.
@@ -21,7 +19,34 @@ public extension NSManagedObjectContext {
             return false
         }
     }
-    
+
+    /// Deletes all instances of a `NSManagedObject` type in the persistent store, or those matching a
+    /// provided `NSPredicate`.
+    ///
+    /// - Parameters:
+    ///   - type:   The type of `NSManagedObject` to delete.
+    ///   - filter: An optional `NSPredicate`. If provided, the function will only delete those objects
+    ///             matching the predicate.
+    func removeInstances<T: NSManagedObject>(of type: T.Type, matching filter: NSPredicate? = nil) throws {
+        guard let entityName = T.entity().name else {
+            fatalError("No entity name found for \(String(describing: T.self))")
+        }
+        let request = NSFetchRequest<T>(entityName: entityName)
+        request.includesPropertyValues = false
+        request.predicate = filter
+        let results = try fetch(request)
+        results.forEach { delete($0) }
+    }
+}
+
+// MARK: - NSManagedObject Access
+
+public extension NSManagedObjectContext {
+    enum ExistingObjectFailure: Error {
+        case mismatchedType(foundEntity: String)
+        case notFound
+    }
+
     /// Retrieves an object of a given `NSManagedObject` subclass from persistent store if it exists.
     ///
     /// - Parameters:
@@ -30,12 +55,13 @@ public extension NSManagedObjectContext {
     ///
     /// - Returns: The concrete object, if it exists in the store. Otherwise, an error is thrown.
     func existing<T: NSManagedObject>(_ type: T.Type, withID id: NSManagedObjectID) throws -> T {
-        let managedObject = try existingObject(with: id)
-        if let typedObject = managedObject as? T {
-            return typedObject
-        } else {
-            throw RCDataKitErrors.mismatchedType
+        guard let managedObject = try? existingObject(with: id) else {
+            throw ExistingObjectFailure.notFound
         }
+        guard let typedObject = managedObject as? T else {
+            throw ExistingObjectFailure.mismatchedType(foundEntity: managedObject.entity.name!)
+        }
+        return typedObject
     }
     
     /// Retrieves an array of objects of a given `NSManagedObject` subclass from persistent store, skipping
@@ -55,22 +81,17 @@ public extension NSManagedObjectContext {
         request.predicate = predicate
         return try fetch(request)
     }
+}
+
+// MARK: - TransactionAuthors
+
+public extension NSManagedObjectContext {
+    func setAuthor<A: TransactionAuthor>(_ author: A) {
+        transactionAuthor = author.name
+    }
     
-    /// Deletes all instances of a `NSManagedObject` type in the persistent store, or those matching a
-    /// provided `NSPredicate`.
-    ///
-    /// - Parameters:
-    ///   - type:   The type of `NSManagedObject` to delete.
-    ///   - filter: An optional `NSPredicate`. If provided, the function will only delete those objects
-    ///             matching the predicate.
-    func removeInstances<T: NSManagedObject>(of type: T.Type, matching filter: NSPredicate? = nil) throws {
-        guard let entityName = T.entity().name else {
-            fatalError("No entity name found for \(String(describing: T.self))")
-        }
-        let request = NSFetchRequest<T>(entityName: entityName)
-        request.includesPropertyValues = false
-        request.predicate = filter
-        let results = try fetch(request)
-        results.forEach { delete($0) }
+    func author<A: TransactionAuthor>(as authorType: A.Type = A.self) -> A? {
+        guard let transactionAuthor else { return nil }
+        return A.allCases.first { $0.name == transactionAuthor }
     }
 }
