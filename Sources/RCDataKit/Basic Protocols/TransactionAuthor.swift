@@ -24,3 +24,11 @@ public extension TransactionAuthor where Self: RawRepresentable, RawValue == Str
         rawValue
     }
 }
+
+// MARK: - Basic Authors
+
+/// A sample `TransactionAuthor` type with IDs for one view context and one background context.
+public enum BasicAuthors: String, TransactionAuthor {
+    case viewContext
+    case backgroundContext
+}

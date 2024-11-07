@@ -11,7 +11,7 @@ Helpful tools for Core Data
 - [Installation](#installation)
 - [Creating a Data Stack](#creating-a-data-stack)
     - [DataStack Protocol](#datastack-protocol)
-        - [Basic DataStack Implementations](#basic-datastack-implementations)
+        - [Default DataStack Implementations](#default-datastack-implementations)
     - [Helper Types](#helper-types)
         - [TransactionAuthor Protocol](#transactionauthor-protocol)
         - [ModelManager and ModelFileManager Protocols](#modelmanager-and-modelfilemanager-protocols)
@@ -84,12 +84,13 @@ let viewContext = myStack.viewContext
 let bgContext = myStack.backgroundContext(author: .cloudDataImport)
 ```
 
-### Basic DataStack Implementations
+### Default DataStack Implementations
 
 There are a few pre-made implementations of `DataStack` available here:
 
-- **PreviewStack** is an in-memory store for use in SwiftUI previews or other non-persisted environments.
 - **BasicDataStack** is a SQLite-backed stack with a single store, and initialization options for Persistent History Tracking and Staged Migrations.
+- **PreviewStack** is an in-memory store for use in SwiftUI previews or other non-persisted environments.
+- **TestingStack** is stored in a temporary directory so you can use it in test cases. (I've found that in-memory stores during test cases can have unpredictable exceptions that file-backed storage doesn't. Also, I've found that running test cases in parallel with stacks using the same `NSManagedObjectModel` often throw exceptions, so it's best to run these tests serially rather than concurrently.)
 
 ## Helper Types
 

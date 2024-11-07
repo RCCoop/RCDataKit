@@ -7,8 +7,7 @@ import Foundation
 
 // MARK: - Basic Stack for Testing & Previews
 
-/// A basic `DataStack` with no file-backed store (in-memory only) and only one background context
-/// available.
+/// A basic `DataStack` with no file-backed store (in-memory only).
 public struct PreviewStack<Authors: TransactionAuthor>: DataStack {
     public var viewContextID: Authors { Authors.allCases.first! }
     
@@ -47,11 +46,6 @@ public struct PreviewStack<Authors: TransactionAuthor>: DataStack {
     ) {
         self.init(Model.self, name: model.modelName, authors: authors)
     }
-}
-
-public enum BasicAuthors: String, TransactionAuthor {
-    case viewContext
-    case backgroundContext
 }
 
 extension PreviewStack where Authors == BasicAuthors {
