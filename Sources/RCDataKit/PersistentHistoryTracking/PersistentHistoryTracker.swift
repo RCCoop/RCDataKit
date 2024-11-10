@@ -16,13 +16,13 @@ import Foundation
 /// NSPersistentHistoryTrackingKey and NSPersistentStoreRemoteChangeNotificationPostOptionKey to true
 /// (as NSNumber) before loading the container. Also, the viewContext should probably have
 /// automaticallyMergesChangesFromParent set to false, since the persistent history merges handle that.
-public actor PersistentHistoryTracker<Author: TransactionAuthor> {
+public actor PersistentHistoryTracker {
     var container: NSPersistentContainer
         
-    /// The Author type for the viewContext of the current app target for the PersistentHistoryTracker. This should
+    /// The author for the viewContext of the current app target for the PersistentHistoryTracker. This should
     /// be the context that is never directly written to, since it receives all write transactions through persistent
-    /// history merging.
-    var currentAuthor: Author
+    /// history merging. Most commonly, it should be `.viewContext`.
+    var currentAuthor: TransactionAuthor
             
     /// Regardless of whether persistent history transactions have been merged, they will be deleted if they
     /// are older than this.
@@ -44,7 +44,7 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
     /// - Parameters:
     ///   - container:            The `NSPersistentContainer` to track history changes on.
     ///   - currentAuthor:        The value of `TransactionAuthor` that represents the View
-    ///                           context of the current app target.
+    ///                           context of the current app target. By default, it is `.viewContext`.
     ///   - timestampManager:     An instance where timestamp info will be stored for the container's
     ///                           app group.
     ///   - maxTransactionAge:    Regardless of whether persistent history transactions have been
@@ -53,8 +53,7 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
     ///   - customFetcher:        An optional `PersistentHistoryFetcher` to retrieve
     ///                           `PersistentHistoryTransaction`s. If no custom fetcher
     ///                           is provided, a default one is used that fetches transactions with
-    ///                           `author` equal to any of the tracker's `Authors` types
-    ///                           besides the `currentAuthor` value.
+    ///                           `author` not equal to the tracker's `currentAuthor`.
     ///   - customMerger:         An optional `PersistentHistoryMerger` to handle merging
     ///                           of `PersistentHistoryTransaction`s retrieved by the
     ///                           `PersistentHistoryFetcher`. If no custom merger is
@@ -63,8 +62,7 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
     ///   - customCleaner:        An optional `PersistentHistoryCleaner` to clean expired
     ///                           `PersistentHistoryTransactions` after merging. If no
     ///                           custom cleaner is provided, a default one is used that removes
-    ///                           all transactions with `author` corresponding to any of
-    ///                           the tracker's `Authors` type.
+    ///                           all transactions.
     ///   - logger:               An instance of `DataStackLogger` to handle logging.
     ///
     /// - Important: In order to enable persistent history tracking, the container's store description must
@@ -73,7 +71,7 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
     ///              `true as NSNumber` before loading the container.
     public init(
         container: NSPersistentContainer,
-        currentAuthor: Author,
+        currentAuthor: TransactionAuthor = .viewContext,
         timestampManager: PersistentHistoryTimestampManager? = nil,
         maxTransactionAge: TimeInterval = 24 * 7 * 60 * 60,
         customFetcher: PersistentHistoryFetcher? = nil,
@@ -111,8 +109,7 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
     }
     
     func processHistoryNotification() {
-        let minimumDate = timestampManager
-            .latestCommonHistoryTransactionDate(authors: Author.allCases)
+        let minimumDate = timestampManager.latestHistoryTransactionDate(authors: nil)
         ?? .distantPast
         
         logger?.log(type: .debug, message: "PersistentHistoryTracker \(currentAuthor.name) received history notification. Merging transactions from \(minimumDate)")
@@ -141,15 +138,13 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
         
         // set timestamp for current target
         if let lastTimeStamp = transactions.last?.timestamp {
-            timestampManager.setLatestHistoryTransactionDate(author: currentAuthor, date: lastTimeStamp)
+            timestampManager.updateLatestHistoryTransactionDate(author: currentAuthor, date: lastTimeStamp)
         }
         
         // Clean up
         
         let minDate = Date().addingTimeInterval(-1 * abs(maxTransactionAge))
-        let commonTimestamp = timestampManager
-            .latestCommonHistoryTransactionDate(
-                authors: Author.allCases)
+        let commonTimestamp = timestampManager.latestHistoryTransactionDate(authors: nil)
         
         // Whichever is later, the common timestamp between different transaction
         // authors, or the date of the maximum transaction age, use that to delete
@@ -159,7 +154,10 @@ public actor PersistentHistoryTracker<Author: TransactionAuthor> {
             .max()!
 
         do {
-            try cleaner.cleanTransactions(workerContext: workerContext, cleanBeforeDate: deleteBeforeDate)
+            try cleaner.cleanTransactions(
+                workerContext: workerContext,
+                cleanBeforeDate: deleteBeforeDate,
+                authors: timestampManager.storedTransactionDateAuthors)
         } catch {
             logger?.log(type: .error, message: "TransactionHistoryCleaner failed with error - \(error)")
         }

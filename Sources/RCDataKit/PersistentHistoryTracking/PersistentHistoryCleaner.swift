@@ -14,6 +14,7 @@ public protocol PersistentHistoryCleaner: Sendable {
     /// - Parameters:
     ///   - workerContext: The context on which to perform the work.
     ///   - cleanBeforeDate: The time stamp to use for the `deleteHistory` request.
+    ///   - authors: If provided, limits the purge to transactions matching the given `TransactionAuthor`s
     ///
     /// The basic implementation looks something like:
     /// ```swift
@@ -25,7 +26,8 @@ public protocol PersistentHistoryCleaner: Sendable {
     /// Make sure to run the work on the `workerContext`'s thread by encapsulating it in a `perform` block.
     func cleanTransactions(
         workerContext: NSManagedObjectContext,
-        cleanBeforeDate: Date
+        cleanBeforeDate: Date,
+        authors: [TransactionAuthor]?
     ) throws
 }
 
@@ -33,17 +35,21 @@ extension PersistentHistoryTracker {
     struct DefaultCleaner: PersistentHistoryCleaner {
         var logger: DataStackLogger?
         
-        func cleanTransactions(workerContext: NSManagedObjectContext, cleanBeforeDate: Date) throws {
+        func cleanTransactions(
+            workerContext: NSManagedObjectContext,
+            cleanBeforeDate: Date,
+            authors: [TransactionAuthor]?
+        ) throws {
             let deleteHistoryRequest = NSPersistentHistoryChangeRequest.deleteHistory(before: cleanBeforeDate)
             
             if let fetchRequest = NSPersistentHistoryTransaction.fetchRequest {
                 // !!!: fetchRequest is always nil here
-                let subpredicates = Author.allCases.map {
-                    NSPredicate(format: "%K == %@",
-                                #keyPath(NSPersistentHistoryTransaction.author),
-                                $0.name)
+                if let authors, !authors.isEmpty {
+                    let subpredicates = authors.map {
+                        NSPersistentHistoryTransaction.matchingAuthor($0)
+                    }
+                    fetchRequest.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: subpredicates)
                 }
-                fetchRequest.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: subpredicates)
                 deleteHistoryRequest.fetchRequest = fetchRequest
             }
             deleteHistoryRequest.resultType = .count

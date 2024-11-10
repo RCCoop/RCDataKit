@@ -37,10 +37,10 @@ public struct PersistentHistoryTrackingOptions {
         self.logger = logger
     }
     
-    func tracker<A: TransactionAuthor>(
-        currentAuthor: A,
+    func tracker(
+        currentAuthor: TransactionAuthor,
         container: NSPersistentContainer
-    ) -> PersistentHistoryTracker<A> {
+    ) -> PersistentHistoryTracker {
         PersistentHistoryTracker(
             container: container,
             currentAuthor: currentAuthor,

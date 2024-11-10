@@ -52,8 +52,8 @@ final class ManagedObjectContextTests: XCTestCase {
         do {
             let _ = try viewContext.existing(Teacher.self, withID: oneID)
             XCTFail("Should fail here")
-        } catch let error as RCDataKitErrors {
-            XCTAssertEqual(error, .mismatchedType)
+        } catch let error as NSManagedObjectContext.ExistingObjectFailure {
+            XCTAssertEqual(error, .mismatchedType(foundEntity: "Student"))
         } catch {
             XCTFail("Wrong error type: \(String(describing: type(of: error)))")
         }

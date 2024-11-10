@@ -7,13 +7,11 @@ import Foundation
 
 /// A type that provides some standard helper tools for managing a CoreData persistent store.
 public protocol DataStack {
-    associatedtype Authors: TransactionAuthor
-    
     /// The `NSPersistentContainer` that the `DataStack` wraps.
     var container: NSPersistentContainer { get }
     
-    /// The value of `Authors` to be used in the current target's view context.
-    var viewContextID: Authors { get }
+    /// The `TransactionAuthor` to be used in the current target's view context.
+    var mainContextAuthor: TransactionAuthor { get }
 }
 
 // MARK: - Common Functions
@@ -26,7 +24,7 @@ extension DataStack {
     public var viewContext: NSManagedObjectContext {
         let vc = container.viewContext
         vc.name = "ViewContext"
-        vc.setAuthor(viewContextID)
+        vc.setAuthor(mainContextAuthor)
         
         // Merge Policy?
         // Undo Manager?
@@ -41,8 +39,8 @@ extension DataStack {
     /// - Warning: You should not change the `name` or `transactionAuthor` properties of the
     ///            context, since they are set by the container in order to handle persistent history
     ///            tracking.
-    public func backgroundContext(author: Authors) -> NSManagedObjectContext {
-        assert(author.name != viewContextID.name, "Background contexts should not have the same name as the viewContext")
+    public func backgroundContext(author: TransactionAuthor) -> NSManagedObjectContext {
+        assert(author != mainContextAuthor, "Background contexts should not have the same name as the viewContext")
         
         let context = container.newBackgroundContext()
         context.setAuthor(author)

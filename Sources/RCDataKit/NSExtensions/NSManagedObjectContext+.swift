@@ -42,7 +42,7 @@ public extension NSManagedObjectContext {
 // MARK: - NSManagedObject Access
 
 public extension NSManagedObjectContext {
-    enum ExistingObjectFailure: Error {
+    enum ExistingObjectFailure: Error, Equatable {
         case mismatchedType(foundEntity: String)
         case notFound
     }
@@ -86,12 +86,11 @@ public extension NSManagedObjectContext {
 // MARK: - TransactionAuthors
 
 public extension NSManagedObjectContext {
-    func setAuthor<A: TransactionAuthor>(_ author: A) {
+    func setAuthor(_ author: TransactionAuthor) {
         transactionAuthor = author.name
     }
     
-    func author<A: TransactionAuthor>(as authorType: A.Type = A.self) -> A? {
-        guard let transactionAuthor else { return nil }
-        return A.allCases.first { $0.name == transactionAuthor }
+    func author() -> TransactionAuthor? {
+        transactionAuthor.map { TransactionAuthor($0) }
     }
 }

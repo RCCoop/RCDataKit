@@ -11,14 +11,14 @@ import Foundation
 typealias BasicDataStackConfiguration = (NSPersistentStoreDescription, NSManagedObjectContext) -> Void
 
 /// An object that conforms to `DataStack`, and handles basic setup of the
-public struct BasicDataStack<Authors: TransactionAuthor>: DataStack {
+public struct BasicDataStack: DataStack {
     enum Errors: Error {
         case noStoreDescription
     }
 
     public let container: NSPersistentContainer
-    public private(set) var historyTracker: PersistentHistoryTracker<Authors>? = nil
-    public let viewContextID: Authors
+    public let mainContextAuthor: TransactionAuthor
+    public private(set) var historyTracker: PersistentHistoryTracker? = nil
     
     /// Private initializer that underpins the public initializers.
     ///
@@ -31,14 +31,14 @@ public struct BasicDataStack<Authors: TransactionAuthor>: DataStack {
     private init(
         modelName: String,
         model: NSManagedObjectModel,
-        mainAuthor: Authors,
+        mainAuthor: TransactionAuthor,
         configurations: [BasicDataStackConfiguration]
     ) throws {
         // Create NSPersistentContainer
         self.container = NSPersistentContainer(name: modelName, managedObjectModel: model)
         
         // Set main viewContext name
-        self.viewContextID = mainAuthor
+        self.mainContextAuthor = mainAuthor
         
         // Get main Description
         guard let description = container.persistentStoreDescriptions.first else {
@@ -72,7 +72,7 @@ public struct BasicDataStack<Authors: TransactionAuthor>: DataStack {
     public init<ModelFile: ModelFileManager>(
         _ modelFile: ModelFile.Type,
         storeURL: URL? = nil,
-        mainAuthor: Authors,
+        mainAuthor: TransactionAuthor,
         persistentHistoryOptions: PersistentHistoryTrackingOptions? = nil
     ) throws {
         
@@ -116,7 +116,7 @@ public struct BasicDataStack<Authors: TransactionAuthor>: DataStack {
         storeURL: URL? = nil,
         versionKey: V.Type,
         currentVersion: V? = nil,
-        mainAuthor: Authors,
+        mainAuthor: TransactionAuthor,
         persistentHistoryOptions: PersistentHistoryTrackingOptions? = nil
     ) throws {
         let persistentHistoryConfiguration: BasicDataStackConfiguration = { (desc, context) in

@@ -31,7 +31,7 @@ public protocol PersistentHistoryFetcher: Sendable {
 extension NSPersistentHistoryTransaction {
     /// Generates a `NSPredicate` for `NSPersistentHistoryTransaction`s originating from a context
     /// with the given author name.
-    public static func matchingAuthor<A: TransactionAuthor>(_ author: A) -> NSPredicate {
+    public static func matchingAuthor(_ author: TransactionAuthor) -> NSPredicate {
         NSPredicate(format: "%K == %@",
                     #keyPath(NSPersistentHistoryTransaction.author),
                     author.name)
@@ -39,7 +39,7 @@ extension NSPersistentHistoryTransaction {
     
     /// Generates a `NSPredicate` for `NSPersistentHistoryTransaction`s that do not originate
     /// from a context with the given author name.
-    public static func notMatchingAuthor<A: TransactionAuthor>(_ author: A) -> NSPredicate {
+    public static func notMatchingAuthor(_ author: TransactionAuthor) -> NSPredicate {
         NSPredicate(format: "%K != %@",
                     #keyPath(NSPersistentHistoryTransaction.author),
                     author.name)
@@ -47,13 +47,10 @@ extension NSPersistentHistoryTransaction {
 }
 
 extension PersistentHistoryTracker {
-    /// PersistentHistoryFetcher that fetches only transactions with an `author` based on
-    /// the `TransactionAuthors.name` of all authors besides the given `currentAuthor`.
-    /// For example, if the current author is 'viewContext', all `TransactionAuthors` besides the
-    /// `viewContext` will be fetched. This leaves out any authors that are not in the
-    /// `TransactionAuthors.allCases` list.
+    /// PersistentHistoryFetcher that fetches only transactions where the `author` doesn't match
+    /// the `name` of the current Author.
     public struct DefaultFetcher: PersistentHistoryFetcher {
-        public var currentAuthor: Author
+        public var currentAuthor: TransactionAuthor
         public var logger: DataStackLogger?
         
         public func fetchTransactions(workerContext: NSManagedObjectContext, minimumDate: Date) throws -> [NSPersistentHistoryTransaction] {
@@ -74,45 +71,11 @@ extension PersistentHistoryTracker {
             let request = NSPersistentHistoryChangeRequest.fetchHistory(after: minimumDate)
             
             if let historyFetchRequest = NSPersistentHistoryTransaction.fetchRequest {
-                let subPredicates = currentAuthor.allOtherAuthors.map {
-                    NSPersistentHistoryTransaction.matchingAuthor($0)
-                }
-                historyFetchRequest.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: subPredicates)
+                historyFetchRequest.predicate = NSPersistentHistoryTransaction.notMatchingAuthor(currentAuthor)
                 request.fetchRequest = historyFetchRequest
             }
             
             return request
-        }
-    }
-    
-    /// PersistentHistoryFetcher that fetches only transactions where the `author` doesn't match
-    /// the `name` of the current Author. This is subtly different from `DefaultFetcher` in that
-    /// this one may fetch transactions that aren't anticipated based on known `TransactionAuthor` types,
-    /// so this one should be used if you are trying to find transactions that originate outside of your known
-    /// scope (like CloudKit transactions?).
-    public struct AlternateDefaultFetcher: PersistentHistoryFetcher {
-        public var currentAuthor: Author
-        public var logger: DataStackLogger?
-        
-        public func fetchTransactions(workerContext: NSManagedObjectContext, minimumDate: Date) throws -> [NSPersistentHistoryTransaction] {
-            try workerContext.performAndWait {
-                let request = NSPersistentHistoryChangeRequest.fetchHistory(after: minimumDate)
-                
-                if let historyFetchRequest = NSPersistentHistoryTransaction.fetchRequest {
-                    historyFetchRequest.predicate = NSPersistentHistoryTransaction
-                        .notMatchingAuthor(currentAuthor)
-                    request.fetchRequest = historyFetchRequest
-                }
-                
-                let result = try workerContext.execute(request) as? NSPersistentHistoryResult
-                let finalResult = result?.result as? [NSPersistentHistoryTransaction] ?? []
-                logger?.log(type: .debug, message: """
-                    TransactionHistoryFetcher \(currentAuthor.name) got \
-                    \(finalResult.count) transactions after \(minimumDate):
-                    \(finalResult.map({ $0.debugDescription }).joined(separator: "\n"))
-                    """)
-                return finalResult
-            }
         }
     }
 }

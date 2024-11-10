@@ -38,10 +38,10 @@ enum TestingStacks {
     
     static func temporaryStack(
         uniqueName: String,
-        mainAuthor: ModelAuthors = .viewContext1,
+        mainAuthor: TransactionAuthor = .viewContext,
         removeOldStore: Bool = true,
         withPersistentHistoryTracking: Bool = false
-    ) throws -> BasicDataStack<ModelAuthors> {
+    ) throws -> BasicDataStack {
         let url = try prepareStorageURL(name: uniqueName, removeExistingFile: removeOldStore)
         print("Creating temporary stack at \(url.path())")
         let trackingOptions = withPersistentHistoryTracking ? PersistentHistoryTrackingOptions() : nil
@@ -66,8 +66,8 @@ extension TestingStacks {
     
     static func oldModelStack(
         uniqueName: String,
-        mainAuthor: ModelAuthors = .viewContext1
-    ) throws -> BasicDataStack<ModelAuthors> {
+        mainAuthor: TransactionAuthor = .viewContext
+    ) throws -> BasicDataStack {
         // Copy testing version of Sqlite store to temporary location
         let url = try prepareStorageURL(name: uniqueName)
         try FileManager.default.copyItem(at: oldSqliteURL, to: url)
@@ -82,8 +82,8 @@ extension TestingStacks {
     
     static func migratedContainer(
         uniqueName: String,
-        mainAuthor: ModelAuthors = .viewContext1
-    ) throws -> BasicDataStack<ModelAuthors> {
+        mainAuthor: TransactionAuthor = .viewContext
+    ) throws -> BasicDataStack {
         // Copy testing version of Sqlite store to temporary location:
         let url = try prepareStorageURL(name: uniqueName)
         try FileManager.default.copyItem(at: oldSqliteURL, to: url)

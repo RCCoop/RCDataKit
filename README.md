@@ -13,7 +13,7 @@ Helpful tools for Core Data
     - [DataStack Protocol](#datastack-protocol)
         - [Default DataStack Implementations](#default-datastack-implementations)
     - [Helper Types](#helper-types)
-        - [TransactionAuthor Protocol](#transactionauthor-protocol)
+        - [TransactionAuthor](#transactionauthor)
         - [ModelManager and ModelFileManager Protocols](#modelmanager-and-modelfilemanager-protocols)
         - [ModelVersion Protocol](#modelversion-protocol)
         - [PersistentHistoryTracker actor](#persistenthistorytracker-actor)
@@ -70,17 +70,16 @@ Or add the package to your Xcode project with `File -> Add Package Dependencies.
 **RCDataKit** has a few pre-made solutions for setting up your Core Data stack. They’re not required for use with any of the other types in the library, but they do most of the setup work for you.
 
 ## DataStack Protocol
-
-This simple protocol is for types that wrap a `NSPersistentContainer` and  provide pre-configured `NSManagedObjectContexts`. Each `DataStack` requires a `TransactionAuthor` associated type, but otherwise the implementation is up to you.
+This simple protocol is for types that wrap a `NSPersistentContainer` and  provide pre-configured `NSManagedObjectContexts`.
 
 ```swift
 let myStack: DataStack
 
 // Get the viewContext -- a NSManagedObjectContext where
-// transactionAuthor == myStack.viewContextID.name
+// transactionAuthor == myStack.mainContextAuthor.name
 let viewContext = myStack.viewContext
 
-// Get a background context where transactionAuthor == localEditing.name
+// Get a background context where transactionAuthor == TransactionAuthor.cloudDataImport.name
 let bgContext = myStack.backgroundContext(author: .cloudDataImport)
 ```
 
@@ -94,24 +93,17 @@ There are a few pre-made implementations of `DataStack` available here:
 
 ## Helper Types
 
-### TransactionAuthor Protocol
+### TransactionAuthor
+A simple protocol to keep track of the different context authors in your Persistent Store. This does nothing by itself, but is used in `DataStack` and `PersistentHistoryTracker` standardize your author titles.
 
-A simple protocol to keep track of the different context authors in your Persistent Store. This does nothing by itself, but is used in `DataStack` and `PersistentHistoryTracker` to provide a list of all possible author titles.
-
-The idea is that you’ll want one case for each of your main-thread contexts that access your data store (view context from your app), and as many named background contexts as you like to keep track of who or what is writing to your store.
+An easy way to set this up is to make an extension for `TransactionAuthor` to make a pre-set list of authors-- one for each main-thread context that accesses your data store (the app's view context, a widget's context, etc.), and as many named background contexts as you like to keep track of who or what is writing to your store.
 
 ```swift
-public protocol TransactionAuthor: CaseIterable {
-    var name: String { get }
-}
-
-enum Authors: String, TransactionAuthor {
-    case iOSViewContext
-    case extensionContext
-    case networkSync
-    case localEditing
-
-    // Authors is RawRepresentable by String, so `name` is auto-generated
+extension TransactionAuthor {
+    static var iOSViewContext: TransactionAuthor { "iOSViewContext" }
+    static var extensionContext: TransactionAuthor { "extensionContext" }
+    static var networkSync: TransactionAuthor { "networkSync" }
+    static var localEditing: TransactionAuthor { "localEditing" }
 }
 ```
 
@@ -200,12 +192,12 @@ Alternately, just pass your `ModelVersion` into the initializer for `BasicDataSt
 ```swift
 let stack = try BasicDataStack(
                     versionKey: Versions.self,
-                    mainAuthor: Authors.iOSViewContext)
+                    mainAuthor: .iOSViewContext)
 ```
 
 ### PersistentHistoryTracker actor
 
-Persistent History Tracking is well-documented, but can still be very confusing. `PersistentHistoryTracker` is an actor that attaches to your `NSPersistentContainer` in order to manage all that tracking for you. It borrows very heavily from tutorials and projects by [Antoine Van Der Lee](https://www.avanderlee.com/swift/persistent-history-tracking-core-data/) and [FatBobMan](https://fatbobman.com/en/posts/persistenthistorytracking/) (especially FatBobMan’s [PersistentHistoryTrackingKit](https://github.com/fatbobman/PersistentHistoryTrackingKit/tree/main), thank you!), with some added helpers based on the `TransactionAuthor` protocol.
+Persistent History Tracking is well-documented, but can still be very confusing. `PersistentHistoryTracker` is an actor that attaches to your `NSPersistentContainer` in order to manage all that tracking for you. It borrows very heavily from tutorials and projects by [Antoine Van Der Lee](https://www.avanderlee.com/swift/persistent-history-tracking-core-data/) and [FatBobMan](https://fatbobman.com/en/posts/persistenthistorytracking/) (especially FatBobMan’s [PersistentHistoryTrackingKit](https://github.com/fatbobman/PersistentHistoryTrackingKit/tree/main), thank you!), with some added helpers based on `TransactionAuthor`.
 
 To begin tracking:
 
@@ -219,7 +211,7 @@ storeDescription.setOption(trueOption, forKey: NSPersistentStoreRemoteChangeNoti
 // Add a PersistentHistoryTracker to your container
 self.tracker = PersistentHistoryTracker(
     container: myPersistentContainer,
-    currentAuthor: Authors.iOSViewContext)
+    currentAuthor: .iOSViewContext)
 
 // Start or stop monitoring as needed.
 tracker.startMonitoring()
@@ -230,7 +222,7 @@ You can also enable tracking in `BasicDataStack` by passing in an instance of `P
 ```swift
 let stack = try BasicDataStack(
                     versionKey: Versions.self,
-                    mainAuthor: Authors.iOSViewContext,
+                    mainAuthor: .iOSViewContext,
                     persistentHistoryOptions: .init())
 
 stack.historyTracker?.startMonitoring()

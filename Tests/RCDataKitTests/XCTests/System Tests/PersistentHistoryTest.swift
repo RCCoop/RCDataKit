@@ -10,8 +10,8 @@ class PersistentHistoryTest: XCTestCase {
     
     var timestampManager = DefaultTimestampManager()
     
-    var stack1: BasicDataStack<ModelAuthors>!
-    var stack2: BasicDataStack<ModelAuthors>!
+    var stack1: BasicDataStack!
+    var stack2: BasicDataStack!
     
     // MARK: - Setup
     
@@ -21,11 +21,11 @@ class PersistentHistoryTest: XCTestCase {
         let stackName = "PersistentHistoryTest"
         stack1 = try TestingStacks.temporaryStack(
             uniqueName: stackName,
-            mainAuthor: .viewContext1,
+            mainAuthor: .viewContext,
             withPersistentHistoryTracking: true)
         stack2 = try TestingStacks.temporaryStack(
             uniqueName: stackName,
-            mainAuthor: .viewContext2,
+            mainAuthor: .secondViewContext,
             removeOldStore: false,
             withPersistentHistoryTracking: true)
     }
@@ -33,7 +33,11 @@ class PersistentHistoryTest: XCTestCase {
     override func tearDown() async throws {
         try await super.tearDown()
         
-        ModelAuthors.allCases.forEach { timestampManager.setLatestHistoryTransactionDate(author: $0, date: nil) }
+        timestampManager.updateLatestHistoryTransactionDate([
+            .viewContext : nil,
+            .secondViewContext : nil,
+            .backgroundContext : nil
+        ])
         
         stack2 = nil
         stack1 = nil
@@ -109,10 +113,10 @@ class PersistentHistoryTest: XCTestCase {
         // Check number of transactions before cleaning == 2
         let transactions = try fetcher.fetchTransactions(workerContext: bgContext, minimumDate: .distantPast)
         XCTAssertEqual(transactions.count, 2)
-        XCTAssertEqual(Set([ModelAuthors.viewContext2.name]), Set(transactions.map(\.author)))
+        XCTAssertEqual(Set([TransactionAuthor.secondViewContext.name]), Set(transactions.map(\.author)))
         
         // Perform cleaning
-        try cleaner.cleanTransactions(workerContext: bgContext, cleanBeforeDate: Date())
+        try cleaner.cleanTransactions(workerContext: bgContext, cleanBeforeDate: Date(), authors: nil)
         
         // Check number of transactions after cleaning == 0
         let cleanedTransactions = try fetcher.fetchTransactions(workerContext: bgContext, minimumDate: .distantPast)
@@ -157,10 +161,8 @@ class PersistentHistoryTest: XCTestCase {
         }
         
         // check userDefaults for latest time stamp for VC1 √
-        let savedTimeStamps = ModelAuthors.allCases.reduce(into: [:]) {
-            $0[$1] = timestampManager.latestHistoryTransactionDate(author: $1)
-        }
-        XCTAssertEqual(Array(savedTimeStamps.keys), [.viewContext1])
+        let savedTimeStamps = timestampManager.storedTransactionDateAuthors
+        XCTAssertEqual(savedTimeStamps, [.viewContext])
         
         // stop monitoring
         await tracker.stopMonitoring()
@@ -186,7 +188,6 @@ class PersistentHistoryTest: XCTestCase {
         
         // Insert objects into background context
         let bgContext = stack2.backgroundContext(author: .backgroundContext)
-        bgContext.name = ModelAuthors.backgroundContext.name
         
         let objID1 = try bgContext.performAndWait {
             let student = Student(context: bgContext, id: 0, firstName: "A", lastName: "A")
@@ -220,12 +221,10 @@ class PersistentHistoryTest: XCTestCase {
             XCTAssertNotNil(student1)
             XCTAssertNotNil(student2)
         }
-        
+
         // check userDefaults for latest time stamp for VC1 √
-        let savedTimeStamps = ModelAuthors.allCases.reduce(into: [:]) {
-            $0[$1] = timestampManager.latestHistoryTransactionDate(author: $1)
-        }
-        XCTAssertEqual(Set(savedTimeStamps.keys), [.viewContext1, .viewContext2])
+        let transactionDateKeys = timestampManager.storedTransactionDateAuthors
+        XCTAssertEqual(Set(transactionDateKeys), [.viewContext, .secondViewContext])
         
         // stop monitoring
         await tracker1.stopMonitoring()

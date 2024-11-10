@@ -4,31 +4,26 @@
 
 import Foundation
 
-// MARK: - TransactionAuthor Type
-
-/// A type that is used with a `DataStack` to describe all possible authors to the persistent store
-/// for the current app. One of the authors needs to be the view context for the current target, and other options
-/// could be the view contexts for other targets, and any background context type that you may use.
-public protocol TransactionAuthor: CaseIterable, Sendable {
-    var name: String { get }
-}
-
-public extension TransactionAuthor {
-    var allOtherAuthors: [Self] {
-        Self.allCases.filter { $0.name != self.name }
+/// A type that is used with a `DataStack` and `NSManagedObjectContext` to describe the sources of
+/// write transactions for the current app.
+///
+/// `TransactionAuthor` is just a light wrapper around `String`, and it is used to set the `transactionAuthor`
+/// property of `NSManagedObjectContext`. Several types in `RCDataKit` make use of `TransactionAuthor`
+/// to aid in various operations.
+public struct TransactionAuthor: Sendable, Hashable, Identifiable {
+    public var name: String
+    
+    public var id: String { name }
+    
+    public init(_ name: String) {
+        self.name = name
     }
+    
+    public static let viewContext = TransactionAuthor("viewContext")
 }
 
-public extension TransactionAuthor where Self: RawRepresentable, RawValue == String {
-    var name: String {
-        rawValue
+extension TransactionAuthor: ExpressibleByStringLiteral {
+    public init(stringLiteral value: String) {
+        self.name = value
     }
-}
-
-// MARK: - Basic Authors
-
-/// A sample `TransactionAuthor` type with IDs for one view context and one background context.
-public enum BasicAuthors: String, TransactionAuthor {
-    case viewContext
-    case backgroundContext
 }

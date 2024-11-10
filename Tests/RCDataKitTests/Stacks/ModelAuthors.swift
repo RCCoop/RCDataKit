@@ -7,6 +7,7 @@
 
 import RCDataKit
 
-enum ModelAuthors: String, TransactionAuthor {
-    case viewContext1, viewContext2, backgroundContext
+extension TransactionAuthor {
+    static let secondViewContext = TransactionAuthor("viewContext2")
+    static let backgroundContext = TransactionAuthor("backgroundContext")
 }
