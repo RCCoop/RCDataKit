@@ -94,7 +94,7 @@ There are a few pre-made implementations of `DataStack` available here:
 ## Helper Types
 
 ### TransactionAuthor
-A simple protocol to keep track of the different context authors in your Persistent Store. This does nothing by itself, but is used in `DataStack` and `PersistentHistoryTracker` standardize your author titles.
+A simple type to keep track of the different context authors in your Persistent Store. This does nothing by itself, but is used in `DataStack` and `PersistentHistoryTracker` standardize your author titles.
 
 An easy way to set this up is to make an extension for `TransactionAuthor` to make a pre-set list of authors-- one for each main-thread context that accesses your data store (the app's view context, a widget's context, etc.), and as many named background contexts as you like to keep track of who or what is writing to your store.
 
