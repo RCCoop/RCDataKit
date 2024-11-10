@@ -6,7 +6,7 @@ import CoreData
 import Foundation
 
 /// A type that provides some standard helper tools for managing a CoreData persistent store.
-public protocol DataStack {
+public protocol DataStack: Sendable {
     /// The `NSPersistentContainer` that the `DataStack` wraps.
     var container: NSPersistentContainer { get }
     

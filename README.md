@@ -17,6 +17,7 @@ Helpful tools for Core Data
         - [ModelManager and ModelFileManager Protocols](#modelmanager-and-modelfilemanager-protocols)
         - [ModelVersion Protocol](#modelversion-protocol)
         - [PersistentHistoryTracker actor](#persistenthistorytracker-actor)
+        - [SwiftUI Integration](#swiftui-integration)
 - [CRUD Helpers](#crud-helpers)
     - [Updatable Protocol](#updatable-protocol)
     - [Persistable Protocol](#persistable-protocol)
@@ -227,6 +228,37 @@ let stack = try BasicDataStack(
 
 stack.historyTracker?.startMonitoring()
 ```
+
+### SwiftUI Integration
+
+You can add your `DataStack` and its `viewContext` to the SwiftUI environment in a single call:
+
+```swift
+struct MyView: View {
+    var myStack: MyDataStack
+    
+    var body: some View {
+        SubView()
+            .dataStackEnvironment(myStack)
+    }
+}
+```
+
+The `.dataStackEnvironment(_:)` call wraps `.environment(_:,_:)` calls for both the DataStack and ManagedObjectContext, so you can access either environment value with the following property wrappers:
+
+```swift
+struct SubView: View {
+    /// This is a NSManagedObjectContext accessed by `myStack.viewContext`
+    @Environment(\.managedObjectContext) var context
+    
+    /// This is a (any DataStack)? equal to `myStack` from MyView.
+    @EnvironmentDataStack var dataStack
+    
+    var body: some View { ... }
+}
+```
+
+You must set the DataStack into a view's environment using the `dataStackEnvironment(_:)` call in order to use the `@EnvironmentDataStack` property wrapper, or it will cause a fatal error.
 
 # CRUD Helpers
 
