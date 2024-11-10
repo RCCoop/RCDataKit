@@ -304,3 +304,58 @@ extension KeyPath where Root: NSManagedObject, Value: Equatable {
         )
     }
 }
+
+// MARK: NSManagedObject Relations
+
+public func == <T: NSManagedObject, V: NSManagedObject>(
+    _ lhs: KeyPath<T, V>,
+    _ rhs: V
+) -> NSPredicate {
+    NSComparisonPredicate(
+        leftExpression: NSExpression(
+            forKeyPath: lhs.stringRepresentation
+        ),
+        rightExpression: NSExpression(
+            forConstantValue: rhs.objectID
+        ),
+        modifier: .direct,
+        type: .equalTo
+    )
+}
+
+public func == <T: NSManagedObject, V: NSManagedObject>(
+    _ lhs: KeyPath<T, Optional<V>>,
+    _ rhs: V
+) -> NSPredicate {
+    NSComparisonPredicate(
+        leftExpression: NSExpression(
+            forKeyPath: lhs.stringRepresentation
+        ),
+        rightExpression: NSExpression(
+            forConstantValue: rhs.objectID
+        ),
+        modifier: .direct,
+        type: .equalTo
+    )
+}
+
+extension KeyPath
+where Root: NSManagedObject,
+        Value: Collection,
+        Value.Element: NSManagedObject
+{
+    public func contains(
+        _ value: Value.Element
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: value.objectID
+            ),
+            modifier: .direct,
+            type: .contains
+        )
+    }
+}

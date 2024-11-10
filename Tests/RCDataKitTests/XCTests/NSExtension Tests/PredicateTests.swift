@@ -210,6 +210,58 @@ final class PredicateTests: XCTestCase {
         XCTAssertEqual(datesIn.count, 3)
     }
     
+    func testRelationPredicates() throws {
+        let stack = try TestingStacks.temporaryStack(uniqueName: "RelationTests")
+        let context = stack.viewContext
+        let data = try SchoolsData()
+        let teachersResult = try context.importPersistableObjects(data.teachers)
+        let schoolsResult = try context.importPersistableObjects(data.schools)
+        let studentsResult = try context.importPersistableObjects(data.students)
+        try context.save()
+        
+        guard !studentsResult.isEmpty,
+              !teachersResult.isEmpty,
+              !schoolsResult.isEmpty
+        else {
+            XCTFail("Didn't import all data")
+            return
+        }
+
+        let studentRequest = Student.fetchRequest()
+        studentRequest.fetchLimit = 1
+        let oneStudent = try context.fetch(studentRequest).first!
+        
+        let teacherRequest = Teacher.fetchRequest()
+        teacherRequest.fetchLimit = 1
+        let oneTeacher = try context.fetch(teacherRequest).first!
+        
+        let schoolRequest = School.fetchRequest()
+        schoolRequest.fetchLimit = 1
+        let oneSchool = try context.fetch(schoolRequest).first!
+        
+        // predicate for \School.teacher == teacher -> teacher is nonOptional
+        let predicate1 = \School.teacher == oneTeacher
+        let nonOptionalPredicate = try XCTUnwrap(predicate1 as? NSComparisonPredicate)
+        XCTAssertEqual(nonOptionalPredicate.leftExpression.keyPath, "teacher")
+        XCTAssertEqual(nonOptionalPredicate.rightExpression, NSExpression(forConstantValue: oneTeacher.objectID))
+        
+        // predicate for \Student.school == school -> school is Optional
+        let predicate2 = \Student.school == oneSchool
+        let optionalPredicate = try XCTUnwrap(predicate2 as? NSComparisonPredicate)
+        XCTAssertEqual(optionalPredicate.leftExpression.keyPath, "school")
+        XCTAssertEqual(optionalPredicate.rightExpression, NSExpression(forConstantValue: oneSchool.objectID))
+        
+        // predicate for \School.students.contains(student) -> Students is collection
+        let predicate3 = (\School.students).contains(oneStudent)
+        let collectionPredicate = try XCTUnwrap(predicate3 as? NSComparisonPredicate)
+        XCTAssertEqual(collectionPredicate.leftExpression.keyPath, "students")
+        XCTAssertEqual(collectionPredicate.rightExpression, NSExpression(forConstantValue: oneStudent.objectID))
+        
+        // Make sure the "contains" predicate actually works
+        let containsFetchResults = try context.fetch(School.fetchRequest().where(predicate3))
+        XCTAssertFalse(containsFetchResults.isEmpty)
+    }
+    
     func testOtherPredicates() throws {
         // Setup:
         let stack = try TestingStacks.temporaryStack(uniqueName: "AltPredicateTests")

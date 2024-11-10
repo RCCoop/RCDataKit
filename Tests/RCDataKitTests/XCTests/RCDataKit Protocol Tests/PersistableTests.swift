@@ -66,7 +66,7 @@ final class PersistableTests: XCTestCase {
             case let .insert(objectID):
                 let theSchool = try viewContext.existing(School.self, withID: objectID)
                 XCTAssertEqual(theSchool.id, schoolID)
-                XCTAssertEqual(theSchool.teacher?.id, teacherID)
+                XCTAssertEqual(theSchool.teacher.id, teacherID)
             default:
                 XCTFail("Expected to insert school \(schoolID), but got \(result)")
             }

@@ -86,10 +86,14 @@ final class UpdatableManagedObjectTests: XCTestCase {
         let course = School(context: viewContext, id: "ABC", name: "High School")
         course.teacher = teacherA
         
+        let studentA = Student(context: viewContext, id: 2, firstName: "Charlie", lastName: "Brown")
+        studentA.school = course
+        
         try viewContext.save()
         XCTAssertFalse(teacherA.hasChanges)
         XCTAssertFalse(teacherB.hasChanges)
         XCTAssertFalse(course.hasChanges)
+        XCTAssertFalse(studentA.hasChanges)
         
         // Attempt an update that won't apply
         course.update(\.teacher, value: teacherA)
@@ -104,9 +108,9 @@ final class UpdatableManagedObjectTests: XCTestCase {
         XCTAssertFalse(teacherB.hasChanges)
         
         // Attempt an update to nil that will apply
-        XCTAssertTrue(course.update(\.teacher, value: nil))
+        XCTAssertTrue(studentA.update(\.school, value: nil))
         XCTAssertTrue(course.hasChanges)
-        XCTAssertTrue(teacherA.hasChanges)
+        XCTAssertTrue(studentA.hasChanges)
         
         // Attempt an update that will apply
         XCTAssertTrue(course.update(\.teacher, value: teacherB))

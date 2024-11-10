@@ -29,7 +29,9 @@ extension SchoolImport: Persistable {
     
     func importIntoContext(_ context: NSManagedObjectContext, importerData: inout ImporterData) -> PersistenceResult {
         let newSchool = School(context: context, id: id, name: name)
-        newSchool.teacher = importerData.teachers[teacher]
+        if let teacher = importerData.teachers[teacher] {
+            newSchool.teacher = teacher
+        }
         return .insert(newSchool.objectID)
     }
 }
