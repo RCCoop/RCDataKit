@@ -283,6 +283,138 @@ extension KeyPath where Root: NSManagedObject, Value == String {
     }
 }
 
+// MARK: Optional Strings
+
+extension KeyPath where Root: NSManagedObject, Value == Optional<String> {
+    
+    // String Not Equal
+    public func notEqual<Y: StringProtocol>(
+        to rhs: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: rhs
+            ),
+            modifier: .direct,
+            type: .notEqualTo,
+            options: options
+        )
+    }
+
+    // String Equal
+    public func equal<Y: StringProtocol>(
+        to rhs: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: rhs
+            ),
+            modifier: .direct,
+            type: .equalTo,
+            options: options
+        )
+    }
+    
+    // String LIKE
+    public func like<Y: StringProtocol>(
+        _ comparator: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: comparator
+            ),
+            modifier: .direct,
+            type: .like,
+            options: options
+        )
+    }
+    
+    // String CONTAINS
+    public func contains<Y: StringProtocol>(
+        _ substring: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: substring
+            ),
+            modifier: .direct,
+            type: .contains,
+            options: options
+        )
+    }
+    
+    // String BEGINSWITH
+    public func beginsWith<Y: StringProtocol>(
+        _ prefix: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: prefix
+            ),
+            modifier: .direct,
+            type: .beginsWith,
+            options: options
+        )
+    }
+    
+    // Stirng ENDSWITH
+    public func endsWith<Y: StringProtocol>(
+        _ suffix: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: suffix
+            ),
+            modifier: .direct,
+            type: .endsWith,
+            options: options
+        )
+    }
+    
+    // String MATCHES
+    public func matches<Y: StringProtocol>(
+        _ regex: Y,
+        options: NSComparisonPredicate.Options = []
+    ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: regex
+            ),
+            modifier: .direct,
+            type: .matches,
+            options: options
+        )
+    }
+}
+
+
 // MARK: IN
 
 extension KeyPath where Root: NSManagedObject, Value: Equatable {
