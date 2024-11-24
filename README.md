@@ -19,6 +19,7 @@ Helpful tools for Core Data
         - [PersistentHistoryTracker actor](#persistenthistorytracker-actor)
         - [SwiftUI Integration](#swiftui-integration)
 - [CRUD Helpers](#crud-helpers)
+    - [Typed NSManagedObjectID](#typed-nsmanagedobjectid)
     - [Updatable Protocol](#updatable-protocol)
     - [Persistable Protocol](#persistable-protocol)
     - [NSManagedObjectContext Helpers](#nsmanagedobjectcontext-helpers)
@@ -261,6 +262,19 @@ struct SubView: View {
 You must set the DataStack into a view's environment using the `dataStackEnvironment(_:)` call in order to use the `@EnvironmentDataStack` property wrapper, or it will cause a fatal error.
 
 # CRUD Helpers
+
+### Typed NSManagedObjectID
+
+Use `TypedObjectID` in place of `NSManagedObjectID` anywhere that you want to enforce type safety around the ID. Because both `NSManagedObjectID` and the `TypedObjectID` wrapper are `Sendable`, they are the best way to send references to `NSManagedObject` between contexts.
+```swift
+let viewContextPerson = Person(...) // get a person on the ViewContext
+let personId = TypedObjectID(viewContextPerson.objectID) // personId refers only to Person type
+
+try backgroundContext.perform {
+    // get a reference to the same Person from storage, but safe for this context:
+    let backgroundContextPerson = try backgroundContext.existingObject(with: personId)
+}
+```
 
 ### Updatable Protocol
 
