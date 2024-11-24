@@ -30,7 +30,7 @@ Helpful tools for Core Data
 
 ## What Is It?
 
-Core Data is a big and powerful tool, but it has never felt to me that it’s easy to learn. I’ve been using it heavily for years, and I still get confused when I try to do new things with it. **RCDataKit** is a collection of helper tools I’ve made over the years to make Core Data development and learning just a little easier.
+Core Data is a big and powerful tool, but it has never felt to me that it’s easy to learn. I’ve been using it heavily for years, and I still get confused when I try to do new things with it. **RCDataKit** is a collection of helper tools I’ve made over the years to make it all just a little easier.
 
 **RCDataKit** is a work in progress, and I’m intentionally keeping it fairly simple so that beginners can hopefully learn from it by browsing the source code. If you want something a lot more powerful, check out these really great libraries:
 
@@ -69,8 +69,6 @@ Or add the package to your Xcode project with `File -> Add Package Dependencies.
 
 # Creating a Data Stack
 
-**RCDataKit** has a few pre-made solutions for setting up your Core Data stack. They’re not required for use with any of the other types in the library, but they do most of the setup work for you.
-
 ## DataStack Protocol
 This simple protocol is for types that wrap a `NSPersistentContainer` and  provide pre-configured `NSManagedObjectContexts`.
 
@@ -83,6 +81,9 @@ let viewContext = myStack.viewContext
 
 // Get a background context where transactionAuthor == TransactionAuthor.cloudDataImport.name
 let bgContext = myStack.backgroundContext(author: .cloudDataImport)
+
+// TransactionAuthor can also be initialized with a String literal
+let anotherContext = myStack.backgroundContext(author: "otherContext")
 ```
 
 ### Default DataStack Implementations
@@ -108,6 +109,13 @@ extension TransactionAuthor {
     static var localEditing: TransactionAuthor { "localEditing" }
 }
 ```
+
+Or you can create names for your `TransactionAuthor`s at the call site by just using String literals:
+
+```swift
+let someContext = myStack.backgroundContext(author: "EditingTransaction")
+```
+
 
 ### ModelManager and ModelFileManager Protocols
 
@@ -138,16 +146,18 @@ Then you can use your `ModelFileManager` type in initializers for `BasicDataStac
 
 Migrating your Model from one version to the next can be a huge pain— Lightweight Migrations are easy enough, but Custom Migrations not so much. But now we have [Staged Migrations](https://developer.apple.com/videos/play/wwdc2022/10120/)! Unfortunately, [Apple’s documentation](https://developer.apple.com/documentation/coredata/staged_migrations) is lacking. Thanks to [Pol Piela](https://www.polpiella.dev/staged-migrations) and [FatBobMan](https://fatbobman.com/en/posts/what-s-new-in-core-data-in-wwdc23/) for picking up the slack.
 
-With the `ModelVersion` protocol, setting up staged migrations takes a lot less boilerplate code, so you can do the important work.
+With the `ModelVersion` protocol, setting up staged migrations takes a lot less boilerplate code, so you can focus on the important work of performing the migration.
 
-1. Make a type that conforms to the protocol, and make it reference the names of your model versions, and give it a `ModelFileManager` type:
+1. Make a type that conforms to the protocol, have it reference the names of your model versions, and give it a `ModelFileManager` type:
 
 <img width="160" alt="Screenshot_2024-09-15_at_10 24 58_AM" src="https://github.com/user-attachments/assets/9a42ca82-72c2-4c17-afa7-7bba80fa9f7a">
 
 ```swift
 enum Versions: String, ModelVersion {
+    // See `ModelFileManager` protocol:
     typealias ModelFile = TestModelFile
 
+    // One case per version in your xcdatamodeld file:
     case v1 = "Model"
     case v2 = "Model2"
     case v3 = "Model3"
@@ -245,14 +255,14 @@ struct MyView: View {
 }
 ```
 
-The `.dataStackEnvironment(_:)` call wraps `.environment(_:,_:)` calls for both the DataStack and ManagedObjectContext, so you can access either environment value with the following property wrappers:
+The `.dataStackEnvironment(_:)` call wraps `.environment(_:_:)` calls for both the DataStack and ManagedObjectContext, so you can access either environment value with the following property wrappers:
 
 ```swift
 struct SubView: View {
-    /// This is a NSManagedObjectContext accessed by `myStack.viewContext`
+    /// This is a `NSManagedObjectContext` accessed by `myStack.viewContext`
     @Environment(\.managedObjectContext) var context
     
-    /// This is a (any DataStack)? equal to `myStack` from MyView.
+    /// This is a `any DataStack` equal to `myStack` from `MyView`.
     @EnvironmentDataStack var dataStack
     
     var body: some View { ... }
@@ -268,7 +278,7 @@ You must set the DataStack into a view's environment using the `dataStackEnviron
 Use `TypedObjectID` in place of `NSManagedObjectID` anywhere that you want to enforce type safety around the ID. Because both `NSManagedObjectID` and the `TypedObjectID` wrapper are `Sendable`, they are the best way to send references to `NSManagedObject` between contexts.
 ```swift
 let viewContextPerson = Person(...) // get a person on the ViewContext
-let personId = TypedObjectID(viewContextPerson.objectID) // personId refers only to Person type
+let personId = TypedObjectID(viewContextPerson) // personId refers only to Person type
 
 try backgroundContext.perform {
     // get a reference to the same Person from storage, but safe for this context:
@@ -348,20 +358,20 @@ let dictionaryResults: [ImportablePerson.ID : PersistenceResult] = try context
 
 There are some extra functions in an extension of `NSManagedObjectContext` help with basic operations:
 
-Save changes, but only if changes exist in the context. If you update object properties with the `Updatable` protocol functions, this will save you unnecessary `save()` calls.
+- Save changes, but only if changes exist in the context. If you update object properties with the `Updatable` protocol functions, this will save you unnecessary `save()` calls.
 
 ```swift
 try context.saveIfNeeded()
 ```
 
-Get typed `NSManagedObjects` from the context.
+- Get typed `NSManagedObjects` from the context.
 
 ```swift
 let somePerson = try context.existing(Person.self, withID: personID)
 let somePeople = try context.existing(Person.self, withIDs: [ID1, ID2, ID3])
 ```
 
-Remove all objects of a given type from the context (with an optional `NSPredicate` to only remove objects that match the given criteria).
+- Remove all objects of a given type from the context (with an optional `NSPredicate` to only remove objects that match the given criteria).
 
 ```swift
 try context.removeInstances(of: Person.self, matching: someNSPredicate)
@@ -388,7 +398,7 @@ let sorting: [NSSortDescriptor] = [
 
 ### NSPredicate Helpers
 
-`NSPredicate`s can be combined with `&&`, `||`, and `!` operators
+`NSPredicate` can be combined with `&&`, `||`, and `!` operators
 
 ```swift
 let predicate1 = NSPredicate(format: "'age' >= 13")
@@ -399,7 +409,7 @@ let isNotTeenager = !isTeenager
 let alsoIsNotTeenager = !predicate1 || !predicate2
 ```
 
-You can also use `KeyPath`s on `NSManagedObject` subclasses to make simple predicates:
+You can also use `KeyPath` on `NSManagedObject` subclasses to make simple predicates:
 
 ```swift
 // Simple Equatable or Comparable KeyPaths allow this kind of NSPredicate creation
@@ -431,4 +441,6 @@ For a more robust, elegant, and type-safe `NSPredicate` system, check out [Predi
 
 ## Contribution/Feedback
 
-And since it’s a work-in-progress, I’m happy to receive suggestions, feedback, or contributions to it. Create an issue or pull request if you like.
+Since it’s a work-in-progress, I’m happy to receive suggestions, feedback, or contributions. Create an issue or pull request if you like.
+
+And please browse the code and use it however you please. I hope that it can help you learn a few things about Core Data that you can use in your own projects. Cheers!
