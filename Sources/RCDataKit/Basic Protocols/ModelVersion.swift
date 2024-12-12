@@ -154,4 +154,55 @@ extension ModelVersion {
         result.label = label
         return result
     }
+    
+    /// Tests an existing Persistent Store for which model version it uses.
+    ///
+    /// Use this function on a Persistent Store file that isn't necessarily currently being used, in order to determine
+    /// which version of your `ModelVersion` the store is configured for. This can be used for debugging
+    /// staged migrations.
+    ///
+    /// - Parameters:
+    ///   - type: The type of store at the given location.
+    ///   - storeUrl: The location of the store.
+    ///   - configuration: Optionally, the configuration of the data model to use.
+    ///
+    /// - Returns: An array of versions that are compatible with the store (there should only be zero or
+    ///            one versions in the resulting array).
+    public static func versionsForStore(
+        type: NSPersistentStore.StoreType,
+        at storeUrl: URL,
+        configuration: String? = nil
+    ) -> [Self] {
+        // using https://williamboles.com/progressive-core-data-migration/
+        // to find which version of the model is currently used for the store
+        guard let storeMetadata = try? NSPersistentStoreCoordinator
+            .metadataForPersistentStore(type: type, at: storeUrl)
+        else {
+            return []
+        }
+        
+        let bundle = ModelFile.bundle
+        let modelName = ModelFile.modelName
+        let res = allCases.filter { version in
+            if let testModel = NSManagedObjectModel.named(modelName, in: bundle, versionName: version.versionName) {
+                if testModel.isConfiguration(withName: configuration, compatibleWithStoreMetadata: storeMetadata) {
+                    return true
+                }
+            }
+            return false
+        }
+        return res
+    }
+    
+    /// Tests a `NSPersistentStoreCoordinator` to determine which version of the model it is using.
+    ///
+    /// - Parameter coordinator: The persistent store coordinator to test.
+    ///
+    /// - Returns: An array of versions that are compatible with the store (there should only be zero or
+    ///            one versions in the resulting array).
+    public static func versionsForStore(coordinator: NSPersistentStoreCoordinator) -> [Self] {
+        allCases.filter { version in
+            coordinator.managedObjectModel == version.modelVersion
+        }
+    }
 }

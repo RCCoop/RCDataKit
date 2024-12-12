@@ -16,6 +16,42 @@ final class StagedMigrationTest: XCTestCase {
         try await super.tearDown()
     }
     
+    func testStackModelChecks() throws {
+        let oldName = "oldSchoolStore"
+        let oldStack = try TestingStacks.oldModelStack(uniqueName: oldName)
+        
+        let oldStackUrl = try XCTUnwrap(oldStack.container.persistentStoreDescriptions.first?.url)
+        let oldStackVersions = ModelVersions.versionsForStore(type: .sqlite, at: oldStackUrl)
+        XCTAssertEqual(oldStackVersions, [.v1])
+        
+        let oldStackVersions2 = ModelVersions.versionsForStore(coordinator: oldStack.container.persistentStoreCoordinator)
+        XCTAssertEqual(oldStackVersions2, [.v1])
+        
+        let oldStackModel = oldStack.container.managedObjectModel
+        XCTAssertEqual(oldStackModel.versionChecksum, ModelVersions.v1.versionChecksum)
+        
+        let oldCoordinatorModel = oldStack.container.persistentStoreCoordinator.managedObjectModel
+        XCTAssertEqual(oldCoordinatorModel, ModelVersions.v1.modelVersion)
+        XCTAssertNotEqual(oldCoordinatorModel, ModelVersions.v3.modelVersion)
+        
+        let newName = "newStore"
+        let newStack = try TestingStacks.temporaryStack(uniqueName: newName)
+        
+        let newStackUrl = try XCTUnwrap(newStack.container.persistentStoreDescriptions.first?.url)
+        let newStackVersions = ModelVersions.versionsForStore(type: .sqlite, at: newStackUrl)
+        XCTAssertEqual(newStackVersions, [.v4])
+        
+        let newStackVersions2 = ModelVersions.versionsForStore(coordinator: newStack.container.persistentStoreCoordinator)
+        XCTAssertEqual(newStackVersions2, [.v4])
+        
+        let newStackModel = newStack.container.managedObjectModel
+        XCTAssertEqual(newStackModel.versionChecksum, ModelVersions.v4.versionChecksum)
+        
+        let newCoordinatorModel = newStack.container.persistentStoreCoordinator.managedObjectModel
+        XCTAssertEqual(newCoordinatorModel, ModelVersions.v4.modelVersion)
+        XCTAssertNotEqual(newCoordinatorModel, ModelVersions.v2.modelVersion)
+    }
+    
     func testStackUsingOldModel() throws {
         let name = "oldSchoolStore"
         let stack = try TestingStacks.oldModelStack(uniqueName: name)
