@@ -19,6 +19,21 @@ public prefix func ! (predicate: NSPredicate) -> NSPredicate {
     NSCompoundPredicate(notPredicateWithSubpredicate: predicate)
 }
 
+public enum PredicateJoiner {
+    case and, or
+}
+
+extension Collection where Element == NSPredicate {
+    public func joined(with joiner: PredicateJoiner) -> NSCompoundPredicate {
+        switch joiner {
+        case .and:
+            NSCompoundPredicate(andPredicateWithSubpredicates: Array(self))
+        case .or:
+            NSCompoundPredicate(orPredicateWithSubpredicates: Array(self))
+        }
+    }
+}
+
 // MARK: - NSManagedObjectID Predicate
 
 extension NSPredicate {
@@ -36,6 +51,20 @@ extension NSComparisonPredicate.Options {
     }
 }
 
+private func comparisonFactory<T: NSManagedObject, V>(
+    keyPath: KeyPath<T, V>,
+    compare: NSComparisonPredicate.Operator,
+    value: Any,
+    options: NSComparisonPredicate.Options = []
+) -> NSComparisonPredicate {
+    NSComparisonPredicate(
+        leftExpression: NSExpression(forKeyPath: keyPath.stringRepresentation),
+        rightExpression: NSExpression(forConstantValue: value),
+        modifier: .direct,
+        type: compare,
+        options: options)
+}
+
 // MARK: Equatable & Comparable
 
 // General Equal
@@ -43,16 +72,14 @@ public func == <T: NSManagedObject, V: Equatable>(
     _ lhs: KeyPath<T, V>,
     _ rhs: V
 ) -> NSPredicate {
-    NSComparisonPredicate(
-        leftExpression: NSExpression(
-            forKeyPath: lhs.stringRepresentation
-        ),
-        rightExpression: NSExpression(
-            forConstantValue: rhs
-        ),
-        modifier: .direct,
-        type: .equalTo
-    )
+    comparisonFactory(keyPath: lhs, compare: .equalTo, value: rhs)
+}
+
+public func == <T: NSManagedObject, V: Equatable>(
+    _ lhs: KeyPath<T, V?>,
+    _ rhs: V
+) -> NSPredicate {
+    comparisonFactory(keyPath: lhs, compare: .equalTo, value: rhs)
 }
 
 // General Not Equal
@@ -63,21 +90,26 @@ public func != <T: NSManagedObject, V: Equatable>(
     !(lhs == rhs)
 }
 
+public func != <T: NSManagedObject, V: Equatable>(
+    _ lhs: KeyPath<T, V?>,
+    _ rhs: V
+) -> NSPredicate {
+    !(lhs == rhs)
+}
+
 // General Greater
 public func > <T: NSManagedObject, V: Comparable>(
     _ lhs: KeyPath<T, V>,
     _ rhs: V
 ) -> NSPredicate {
-    NSComparisonPredicate(
-        leftExpression: NSExpression(
-            forKeyPath: lhs.stringRepresentation
-        ),
-        rightExpression: NSExpression(
-            forConstantValue: rhs
-        ),
-        modifier: .direct,
-        type: .greaterThan
-    )
+    comparisonFactory(keyPath: lhs, compare: .greaterThan, value: rhs)
+}
+
+public func > <T: NSManagedObject, V: Comparable>(
+    _ lhs: KeyPath<T, V?>,
+    _ rhs: V
+) -> NSPredicate {
+    comparisonFactory(keyPath: lhs, compare: .greaterThan, value: rhs)
 }
 
 // General GreaterEqual
@@ -85,16 +117,14 @@ public func >= <T: NSManagedObject, V: Comparable>(
     _ lhs: KeyPath<T, V>,
     _ rhs: V
 ) -> NSPredicate {
-    NSComparisonPredicate(
-        leftExpression: NSExpression(
-            forKeyPath: lhs.stringRepresentation
-        ),
-        rightExpression: NSExpression(
-            forConstantValue: rhs
-        ),
-        modifier: .direct,
-        type: .greaterThanOrEqualTo
-    )
+    comparisonFactory(keyPath: lhs, compare: .greaterThanOrEqualTo, value: rhs)
+}
+
+public func >= <T: NSManagedObject, V: Comparable>(
+    _ lhs: KeyPath<T, V?>,
+    _ rhs: V
+) -> NSPredicate {
+    comparisonFactory(keyPath: lhs, compare: .greaterThanOrEqualTo, value: rhs)
 }
 
 // General Less
@@ -102,16 +132,14 @@ public func < <T: NSManagedObject, V: Comparable>(
     _ lhs: KeyPath<T, V>,
     _ rhs: V
 ) -> NSPredicate {
-    NSComparisonPredicate(
-        leftExpression: NSExpression(
-            forKeyPath: lhs.stringRepresentation
-        ),
-        rightExpression: NSExpression(
-            forConstantValue: rhs
-        ),
-        modifier: .direct,
-        type: .lessThan
-    )
+    comparisonFactory(keyPath: lhs, compare: .lessThan, value: rhs)
+}
+
+public func < <T: NSManagedObject, V: Comparable>(
+    _ lhs: KeyPath<T, V?>,
+    _ rhs: V
+) -> NSPredicate {
+    comparisonFactory(keyPath: lhs, compare: .lessThan, value: rhs)
 }
 
 // General LessEqual
@@ -119,16 +147,14 @@ public func <= <T: NSManagedObject, V: Comparable>(
     _ lhs: KeyPath<T, V>,
     _ rhs: V
 ) -> NSPredicate {
-    NSComparisonPredicate(
-        leftExpression: NSExpression(
-            forKeyPath: lhs.stringRepresentation
-        ),
-        rightExpression: NSExpression(
-            forConstantValue: rhs
-        ),
-        modifier: .direct,
-        type: .lessThanOrEqualTo
-    )
+    comparisonFactory(keyPath: lhs, compare: .lessThanOrEqualTo, value: rhs)
+}
+
+public func <= <T: NSManagedObject, V: Comparable>(
+    _ lhs: KeyPath<T, V?>,
+    _ rhs: V
+) -> NSPredicate {
+    comparisonFactory(keyPath: lhs, compare: .lessThanOrEqualTo, value: rhs)
 }
 
 extension KeyPath where Root: NSManagedObject, Value: Comparable {
@@ -136,6 +162,28 @@ extension KeyPath where Root: NSManagedObject, Value: Comparable {
     public func between(
         _ range: ClosedRange<Value>
     ) -> NSPredicate {
+        NSComparisonPredicate(
+            leftExpression: NSExpression(
+                forKeyPath: stringRepresentation
+            ),
+            rightExpression: NSExpression(
+                forConstantValue: [
+                    NSExpression(forConstantValue: range.lowerBound),
+                    NSExpression(forConstantValue: range.upperBound)
+                ]
+            ),
+            modifier: .direct,
+            type: .between
+        )
+    }
+}
+
+extension KeyPath where Root: NSManagedObject {
+    // Numeric Between with Optional Value
+    public func between<V>(_ range: ClosedRange<V>) -> NSPredicate
+    where V: Comparable,
+          Value == V?
+    {
         NSComparisonPredicate(
             leftExpression: NSExpression(
                 forKeyPath: stringRepresentation
@@ -161,17 +209,7 @@ extension KeyPath where Root: NSManagedObject, Value == String {
         to rhs: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: rhs
-            ),
-            modifier: .direct,
-            type: .notEqualTo,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .notEqualTo, value: rhs, options: options)
     }
 
     // String Equal
@@ -179,35 +217,15 @@ extension KeyPath where Root: NSManagedObject, Value == String {
         to rhs: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: rhs
-            ),
-            modifier: .direct,
-            type: .equalTo,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .equalTo, value: rhs, options: options)
     }
-    
+
     // String LIKE
     public func like<Y: StringProtocol>(
         _ comparator: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: comparator
-            ),
-            modifier: .direct,
-            type: .like,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .like, value: comparator, options: options)
     }
     
     // String CONTAINS
@@ -215,17 +233,7 @@ extension KeyPath where Root: NSManagedObject, Value == String {
         _ substring: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: substring
-            ),
-            modifier: .direct,
-            type: .contains,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .contains, value: substring, options: options)
     }
     
     // String BEGINSWITH
@@ -233,17 +241,7 @@ extension KeyPath where Root: NSManagedObject, Value == String {
         _ prefix: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: prefix
-            ),
-            modifier: .direct,
-            type: .beginsWith,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .beginsWith, value: prefix, options: options)
     }
     
     // Stirng ENDSWITH
@@ -251,17 +249,7 @@ extension KeyPath where Root: NSManagedObject, Value == String {
         _ suffix: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: suffix
-            ),
-            modifier: .direct,
-            type: .endsWith,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .endsWith, value: suffix, options: options)
     }
     
     // String MATCHES
@@ -269,17 +257,7 @@ extension KeyPath where Root: NSManagedObject, Value == String {
         _ regex: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: regex
-            ),
-            modifier: .direct,
-            type: .matches,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .matches, value: regex, options: options)
     }
 }
 
@@ -292,17 +270,7 @@ extension KeyPath where Root: NSManagedObject, Value == Optional<String> {
         to rhs: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: rhs
-            ),
-            modifier: .direct,
-            type: .notEqualTo,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .notEqualTo, value: rhs, options: options)
     }
 
     // String Equal
@@ -310,17 +278,7 @@ extension KeyPath where Root: NSManagedObject, Value == Optional<String> {
         to rhs: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: rhs
-            ),
-            modifier: .direct,
-            type: .equalTo,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .equalTo, value: rhs, options: options)
     }
     
     // String LIKE
@@ -328,17 +286,7 @@ extension KeyPath where Root: NSManagedObject, Value == Optional<String> {
         _ comparator: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: comparator
-            ),
-            modifier: .direct,
-            type: .like,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .like, value: comparator, options: options)
     }
     
     // String CONTAINS
@@ -346,17 +294,7 @@ extension KeyPath where Root: NSManagedObject, Value == Optional<String> {
         _ substring: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: substring
-            ),
-            modifier: .direct,
-            type: .contains,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .contains, value: substring, options: options)
     }
     
     // String BEGINSWITH
@@ -364,17 +302,7 @@ extension KeyPath where Root: NSManagedObject, Value == Optional<String> {
         _ prefix: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: prefix
-            ),
-            modifier: .direct,
-            type: .beginsWith,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .beginsWith, value: prefix, options: options)
     }
     
     // Stirng ENDSWITH
@@ -382,17 +310,7 @@ extension KeyPath where Root: NSManagedObject, Value == Optional<String> {
         _ suffix: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: suffix
-            ),
-            modifier: .direct,
-            type: .endsWith,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .endsWith, value: suffix, options: options)
     }
     
     // String MATCHES
@@ -400,17 +318,7 @@ extension KeyPath where Root: NSManagedObject, Value == Optional<String> {
         _ regex: Y,
         options: NSComparisonPredicate.Options = []
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: regex
-            ),
-            modifier: .direct,
-            type: .matches,
-            options: options
-        )
+        comparisonFactory(keyPath: self, compare: .matches, value: regex, options: options)
     }
 }
 
@@ -424,16 +332,7 @@ extension KeyPath where Root: NSManagedObject, Value: Equatable {
     ) -> NSPredicate
         where C.Element == Value
     {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: collection
-            ),
-            modifier: .direct,
-            type: .in
-        )
+        comparisonFactory(keyPath: self, compare: .in, value: collection)
     }
 }
 
@@ -443,32 +342,14 @@ public func == <T: NSManagedObject, V: NSManagedObject>(
     _ lhs: KeyPath<T, V>,
     _ rhs: V
 ) -> NSPredicate {
-    NSComparisonPredicate(
-        leftExpression: NSExpression(
-            forKeyPath: lhs.stringRepresentation
-        ),
-        rightExpression: NSExpression(
-            forConstantValue: rhs.objectID
-        ),
-        modifier: .direct,
-        type: .equalTo
-    )
+    comparisonFactory(keyPath: lhs, compare: .equalTo, value: rhs.objectID)
 }
 
 public func == <T: NSManagedObject, V: NSManagedObject>(
-    _ lhs: KeyPath<T, Optional<V>>,
+    _ lhs: KeyPath<T, V?>,
     _ rhs: V
 ) -> NSPredicate {
-    NSComparisonPredicate(
-        leftExpression: NSExpression(
-            forKeyPath: lhs.stringRepresentation
-        ),
-        rightExpression: NSExpression(
-            forConstantValue: rhs.objectID
-        ),
-        modifier: .direct,
-        type: .equalTo
-    )
+    comparisonFactory(keyPath: lhs, compare: .equalTo, value: rhs.objectID)
 }
 
 extension KeyPath
@@ -479,15 +360,14 @@ where Root: NSManagedObject,
     public func contains(
         _ value: Value.Element
     ) -> NSPredicate {
-        NSComparisonPredicate(
-            leftExpression: NSExpression(
-                forKeyPath: stringRepresentation
-            ),
-            rightExpression: NSExpression(
-                forConstantValue: value.objectID
-            ),
-            modifier: .direct,
-            type: .contains
-        )
+        comparisonFactory(keyPath: self, compare: .contains, value: value.objectID)
+    }
+}
+
+extension KeyPath where Root: NSManagedObject {
+    public func contains<V: Collection>(_ value: V.Element) -> NSPredicate
+    where Value == V?, V.Element: NSManagedObject
+    {
+        comparisonFactory(keyPath: self, compare: .contains, value: value.objectID)
     }
 }
