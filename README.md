@@ -398,7 +398,7 @@ let sorting: [NSSortDescriptor] = [
 
 ### NSPredicate Helpers
 
-`NSPredicate` can be combined with `&&`, `||`, and `!` operators
+`NSPredicate` can be combined with `&&`, `||`, and `!` operators. Collections of `NSPredicate` can be joined with `joined(with:)`.
 
 ```swift
 let predicate1 = NSPredicate(format: "'age' >= 13")
@@ -407,6 +407,7 @@ let predicate2 = NSPredicate(format: "'age' < 20")
 let isTeenager = predicate1 && predicate2
 let isNotTeenager = !isTeenager
 let alsoIsNotTeenager = !predicate1 || !predicate2
+let alsoIsTeenager = [predicate1, predicate2].joined(with: .and)
 ```
 
 You can also use `KeyPath` on `NSManagedObject` subclasses to make simple predicates:
